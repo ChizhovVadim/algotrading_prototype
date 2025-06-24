@@ -1,0 +1,25 @@
+from domaintypes import Trader, PortfolioInfo, SecurityInfo, Order
+
+
+class MultyTrader:
+    def __init__(self):
+        self.__traders = dict()
+
+    def get(self, clientKey: str):
+        return self.__traders[clientKey]
+
+    def add(self, trader: Trader, clientKey: str):
+        self.__traders[clientKey] = trader
+
+    def incomingAmount(self, portfolio: PortfolioInfo) -> float:
+        return self.__traders[portfolio.ClientKey].incomingAmount(portfolio)
+
+    def getPosition(self, portfolio: PortfolioInfo, security: SecurityInfo) -> float:
+        return self.__traders[portfolio.ClientKey].getPosition(portfolio, security)
+
+    def registerOrder(self, order: Order):
+        return self.__traders[order.Portfolio.ClientKey].registerOrder(order)
+
+    def close(self):
+        # TODO
+        pass
