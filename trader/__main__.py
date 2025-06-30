@@ -42,8 +42,8 @@ def initStrategies(trader: MultyTrader, strategyManager: StrategyManager, inbox:
 
     # init signals
     signalConfigs = [
-        SignalConfig("march25", "CNY-9.25"),
-        SignalConfig("march25", "Si-9.25"),
+        SignalConfig("sample_momentum", "CNY-9.25"),
+        SignalConfig("sample_momentum", "Si-9.25"),
     ]
     for signalConfig in signalConfigs:
         strategyManager.addSignal(initSignal(
@@ -52,7 +52,7 @@ def initStrategies(trader: MultyTrader, strategyManager: StrategyManager, inbox:
     # init strategies
     strategyConfigs = [
         StrategyConfig(
-            Advisor="sample",
+            Advisor="sample_momentum",
             Security="CNY-9.25",
             LongLever=9.0,
             ShortLever=9.0,
@@ -60,7 +60,7 @@ def initStrategies(trader: MultyTrader, strategyManager: StrategyManager, inbox:
             Weight=0.6,
         ),
         StrategyConfig(
-            Advisor="sample",
+            Advisor="sample_momentum",
             Security="Si-9.25",
             LongLever=9.0,
             ShortLever=9.0,

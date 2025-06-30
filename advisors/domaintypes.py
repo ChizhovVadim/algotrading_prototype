@@ -18,5 +18,3 @@ class Advice(NamedTuple):
 
 
 Advisor = Callable[[Candle], Advice | None]
-
-IndicatorFunc = Callable[[Candle], float]
