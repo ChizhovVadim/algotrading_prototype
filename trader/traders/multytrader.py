@@ -1,4 +1,4 @@
-from domaintypes import Trader, PortfolioInfo, SecurityInfo, Order
+from domaintypes import Trader, PortfolioInfo, SecurityInfo, Order, SupportsClose
 
 
 class MultyTrader:
@@ -21,5 +21,6 @@ class MultyTrader:
         return self.__traders[order.Portfolio.ClientKey].registerOrder(order)
 
     def close(self):
-        # TODO
-        pass
+        for trader in self.__traders.values():
+            if isinstance(trader, SupportsClose):
+                trader.close()

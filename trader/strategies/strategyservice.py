@@ -55,7 +55,7 @@ class Strategy:
     def onSignal(self, signal: domaintypes.Signal)-> bool:
         # следим только за своими сигналами
         if not (self._security.Code == signal.Security.Code and
-                self._advisor == signal.Advisor):
+                self._config.Advisor == signal.Advisor):
             return False
 
         # считаем, что сигнал слишком старый

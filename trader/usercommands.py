@@ -14,19 +14,30 @@ class InitLimitsUserCmd:
 
 
 class CloseAllUserCmd:
+    '''Закрыть все позиции.
+    Например, перед экспирацией, длинными выходными/праздниками'''
     pass
 
 
 # потом можно прикрутить, чтобы команды не только из консоли, но например из телеграм бота.
-
-
-def handle(inbox: queue.Queue):
+def handle(messages: queue.Queue):
     while True:
         user_input = input("")
-        if not user_input:
+        cmd = _parse(user_input)
+        if cmd is None:
             continue
-        if user_input in ["quit", "exit"]:
-            inbox.put(ExitUserCmd())
+        messages.put(cmd)
+        if isinstance(cmd, ExitUserCmd):
             return
-        elif user_input == "status":
-            inbox.put(CheckStatusUserCmd())
+
+
+def _parse(commandLine: str):
+    if commandLine in ["quit", "exit"]:
+        return ExitUserCmd()
+    if commandLine == "status":
+        return CheckStatusUserCmd()
+    if commandLine == "initlimits":
+        return InitLimitsUserCmd()
+    if commandLine == "closeall":
+        return CloseAllUserCmd()
+    return None

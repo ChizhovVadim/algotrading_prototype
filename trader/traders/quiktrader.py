@@ -7,7 +7,7 @@ from trader import moex
 from .QuikPy import QuikPy
 
 
-class QuikTrader:
+class QuikTrader(domaintypes.SupportsClose):
 
     def __init__(self, port: int, marketData: queue.Queue):
         # Игорь Чечет https://github.com/cia76/QuikPy

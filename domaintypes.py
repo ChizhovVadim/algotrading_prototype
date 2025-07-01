@@ -1,4 +1,5 @@
 from typing import NamedTuple, Iterable, Any, Protocol
+import abc
 import datetime
 import enum
 
@@ -81,4 +82,10 @@ class Trader(Protocol):
         pass
 
     def registerOrder(self, order: Order):
+        pass
+
+
+class SupportsClose(abc.ABC):
+    @abc.abstractmethod
+    def close(self):
         pass
