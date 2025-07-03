@@ -68,29 +68,24 @@ class QuikTrader(domaintypes.SupportsClose):
         raise NotImplementedError()
 
     def registerOrder(self, order: domaintypes.Order):
-        pass
+        transaction = {  # Все значения должны передаваться в виде строк
+            'ACTION': 'NEW_ORDER',
+            'SECCODE': order.Security.Code,
+            'CLASSCODE': order.Security.ClassCode,
+            'ACCOUNT': order.Portfolio.Portfolio,
+            'PRICE': _formatPrice(order.Price, order.Security.PricePrecision, order.Security.PriceStep),
+            'TRANS_ID': str(self._transId),
+            'CLIENT_CODE': str(self._transId),
+        }
+        self._transId += 1
+        if order.Volume > 0:
+            transaction['OPERATION'] = "B"
+            transaction['QUANTITY'] = str(order.Volume)
+        else:
+            transaction['OPERATION'] = "S"
+            transaction['QUANTITY'] = str(-order.Volume)
 
-
-"""
-		transaction = {  # Все значения должны передаваться в виде строк
-			'ACTION': 'NEW_ORDER',
-			'SECCODE': order.Security.Code,
-			'CLASSCODE': order.Security.ClassCode,
-			'ACCOUNT': order.Portfolio.Portfolio,
-			'PRICE': forts.formatPrice(order.Price, order.Security.PricePrecision, order.Security.PriceStep),
-			'TRANS_ID': str(self._transId),
-			'CLIENT_CODE': str(self._transId),
-		}
-		self._transId += 1
-		if order.Volume>0:
-			transaction['OPERATION'] = "B"
-			transaction['QUANTITY'] = str(order.Volume)
-		else:
-			transaction['OPERATION'] = "S"
-			transaction['QUANTITY'] = str(-order.Volume)
-
-		self._quik.SendTransaction(transaction)
-"""
+        self._quik.SendTransaction(transaction)
 
 
 def _quikTimeframe(candleInterval: str):
@@ -119,3 +114,9 @@ def _parseQuikCandle(row) -> domaintypes.Candle:
         LowPrice=float(row["low"]),
         ClosePrice=float(row["close"]),
         Volume=float(row["volume"]))
+
+
+def _formatPrice(price: float, pricePrecision: int, priceStep: float) -> str:
+    if priceStep:
+        price = round(price / priceStep) * priceStep
+    return f"{price:.{pricePrecision}f}"
