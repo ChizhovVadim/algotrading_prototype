@@ -1,4 +1,5 @@
 import datetime
+import unittest
 from domaintypes import SecurityInfo
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=+3), name="MSK")
@@ -60,3 +61,9 @@ def _encodeSecurity(securityCode: str) -> str:
         name = "CR"
 
     return f"{name}{monthCodes[month-1]}{year % 10}"
+
+
+class TestSecurity(unittest.TestCase):
+    def test_securityEncode(self):
+        self.assertEqual(_encodeSecurity("Si-9.25"), "SiU5")
+        self.assertEqual(_encodeSecurity("CNY-12.25"), "CRZ5")
