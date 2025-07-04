@@ -1,4 +1,5 @@
 from .import sample
+from .import validation
 from .domaintypes import Advisor
 
 
@@ -6,7 +7,7 @@ def buildAdvisor(name: str):
     res = _makeAdvisor(name)
     if res is None:
         raise ValueError("bad advisor name", name)
-    return res
+    return validation.applyCandleValidation(res)
 
 
 def _makeAdvisor(name: str):
