@@ -1,5 +1,6 @@
 import os
 import datetime
+from collections import deque
 
 import domaintypes
 from history.candlestorage import CandleStorage
@@ -8,6 +9,32 @@ from . import dateutils
 from . import leverutils
 from . import statistic
 from .hpr import multiContractHprs
+import advisors
+
+
+def reportStatus(
+        advisor: str,
+        timeframe: str | None,
+        security: str,
+        count: int | None,
+):
+    if timeframe is None:
+        timeframe = domaintypes.CandleInterval.MINUTES5
+    if not count:
+        count = 1
+
+    candleStorage = CandleStorage(
+        os.path.expanduser("~/TradingData"), timeframe)
+    advisor = advisors.buildAdvisor(advisor)
+    recentAdvices = deque(maxlen=count)
+    for candle in candleStorage.read(security):
+        advice = advisor(candle)
+        if advice is None:
+            continue
+        if len(recentAdvices) == 0 or recentAdvices[-1].position != advice.position:
+            recentAdvices.append(advice)
+    for advice in recentAdvices:
+        print(advice)
 
 
 def reportAdvisor(
@@ -33,7 +60,7 @@ def reportAdvisor(
     if finishYear is None:
         finishYear = today.year
     if finishQuarter is None:
-        finishQuarter = 2#TODO
+        finishQuarter = 2  # TODO
 
     candleInterval = domaintypes.CandleInterval.MINUTES5
     candlesPath = os.path.expanduser("~/TradingData")

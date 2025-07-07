@@ -66,19 +66,19 @@ def calcDailyPeriodResults(
             continue
 
         # TODO проверить, что skipPnl и новый день согласованы.
-        if dateutils.isNewFortsDateStarted(lastAdvice.DateTime, advice.DateTime):
-            res.append(DateSum(lastAdvice.DateTime.date(),
-                       1 + pnl/baseAdvice.Price))
+        if dateutils.isNewFortsDateStarted(lastAdvice.dateTime, advice.dateTime):
+            res.append(DateSum(lastAdvice.dateTime.date(),
+                       1 + pnl/baseAdvice.price))
             pnl = 0.0
             baseAdvice = lastAdvice
-        if not skipPnl(lastAdvice.DateTime, advice.DateTime):
-            pnl += (lastAdvice.Position*(advice.Price-lastAdvice.Price) -
-                    slippage*advice.Price*abs(advice.Position-lastAdvice.Position))
+        if not skipPnl(lastAdvice.dateTime, advice.dateTime):
+            pnl += (lastAdvice.position*(advice.price-lastAdvice.price) -
+                    slippage*advice.price*abs(advice.position-lastAdvice.position))
         lastAdvice = advice
 
     if lastAdvice is not None:
-        res.append(DateSum(lastAdvice.DateTime.date(),
-                   1 + pnl/baseAdvice.Price))
+        res.append(DateSum(lastAdvice.dateTime.date(),
+                   1 + pnl/baseAdvice.price))
 
     return res
 
@@ -94,9 +94,9 @@ def concatHprs(hprByContract: list[list[DateSum]]) -> list[DateSum]:
             # последний день предыдущего контракта может быть не полный
             res.pop()
         if res:
-            lastDate = res[-1].Date
+            lastDate = res[-1].date
             # or x.Date<lastDate
-            res.extend(itertools.dropwhile(lambda x: x.Date <= lastDate, hprs))
+            res.extend(itertools.dropwhile(lambda x: x.date <= lastDate, hprs))
         else:
             res.extend(hprs)
     return res

@@ -7,21 +7,25 @@ import domaintypes
 
 
 class SignalConfig(NamedTuple):
-    Advisor: str
-    Security: str
+    advisor: str
+    security: str
 
 
 def initSignal(
     securityInfoService: domaintypes.SecurityInfoService,
     marketDataService: domaintypes.MarketDataService,
+    candleStorage,
     config: SignalConfig,
 ):
-    security = securityInfoService.getSecurityInfo(config.Security)
+    security = securityInfoService.getSecurityInfo(config.security)
     if security is None:
-        raise ValueError("bad security", config.Security)
+        raise ValueError("bad security", config.security)
     candleInterval = domaintypes.CandleInterval.MINUTES5
-    adv = advisors.buildAdvisor(config.Advisor)
+    adv = advisors.buildAdvisor(config.advisor)
     lastAdvice = None
+    if candleStorage is not None:
+        lastAdvice = applyHistoryCandles(
+            adv, candleStorage.read(security.name), lastAdvice)
     lastAdvice = applyHistoryCandles(
         adv, marketDataService.getLastCandles(security, candleInterval), lastAdvice)
     logging.info(f"Init advice {lastAdvice}")
@@ -67,22 +71,26 @@ class SignalService:
     def status(self):
         return self._lastSignal
 
-    def onMarketData(self, candle: domaintypes.Candle):
+    def onMarketData(self, candle: domaintypes.Candle) -> domaintypes.Signal | None:
         # следим только за своими барами
-        if not (candle.SecurityCode == self._security.Code
-                and candle.Interval == self._candleInterval):
+        if not (candle.securityCode == self._security.code
+                and candle.interval == self._candleInterval):
             return None
 
         advice = self._advisor(candle)
         # считаем, что сигнал слишком старый
-        if advice is None or advice.DateTime < self._start:
+        if advice is None or advice.dateTime < self._start:
             return None
 
-        self._lastSignal = domaintypes.Signal(
-            Advisor=self._config.Advisor,
-            Security=self._security,
-            DateTime=candle.DateTime,
-            Price=candle.ClosePrice,
-            Position=advice.Position,
-            Details=advice.Details)
-        return self._lastSignal
+        signal = domaintypes.Signal(
+            advisor=self._config.advisor,
+            security=self._security,
+            dateTime=candle.dateTime,
+            price=candle.closePrice,
+            position=advice.position,
+            details=advice.details)
+
+        logging.debug(f"New signal {signal}")
+
+        self._lastSignal = signal
+        return signal

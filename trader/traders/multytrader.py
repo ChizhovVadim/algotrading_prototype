@@ -12,13 +12,13 @@ class MultyTrader:
         self.__traders[clientKey] = trader
 
     def incomingAmount(self, portfolio: PortfolioInfo) -> float:
-        return self.__traders[portfolio.ClientKey].incomingAmount(portfolio)
+        return self.__traders[portfolio.clientKey].incomingAmount(portfolio)
 
     def getPosition(self, portfolio: PortfolioInfo, security: SecurityInfo) -> float:
-        return self.__traders[portfolio.ClientKey].getPosition(portfolio, security)
+        return self.__traders[portfolio.clientKey].getPosition(portfolio, security)
 
     def registerOrder(self, order: Order):
-        return self.__traders[order.Portfolio.ClientKey].registerOrder(order)
+        return self.__traders[order.portfolio.clientKey].registerOrder(order)
 
     def close(self):
         for trader in self.__traders.values():

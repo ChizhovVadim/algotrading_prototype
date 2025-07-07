@@ -7,14 +7,14 @@ _displayDateTimeLayout = "%d.%m.%Y %H:%M"
 
 
 class Advice(NamedTuple):
-    SecurityCode: str
-    DateTime: datetime.datetime
-    Price: float
-    Position: float
-    Details: Any
+    securityCode: str
+    dateTime: datetime.datetime
+    price: float
+    position: float
+    details: Any
 
     def __str__(self):
-        return f"{self.SecurityCode} {self.DateTime.strftime(_displayDateTimeLayout)} {self.Price} {self.Position} {self.Details}"
+        return f"{self.securityCode} {self.dateTime.strftime(_displayDateTimeLayout)} {self.price} {self.position} {self.details}"
 
 
 Advisor = Callable[[Candle], Advice | None]

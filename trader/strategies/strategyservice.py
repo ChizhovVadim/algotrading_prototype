@@ -6,12 +6,12 @@ import domaintypes
 
 
 class StrategyConfig(NamedTuple):
-    Advisor: str
-    Security: str
-    LongLever: float
-    ShortLever: float
-    MaxLever: float
-    Weight: float
+    advisor: str
+    security: str
+    longLever: float
+    shortLever: float
+    maxLever: float
+    weight: float
 
 
 def initStrategy(
@@ -20,9 +20,9 @@ def initStrategy(
     portfolio: domaintypes.PortfolioInfo,
     config: StrategyConfig,
 ):
-    security = securityInfoService.getSecurityInfo(config.Security)
+    security = securityInfoService.getSecurityInfo(config.security)
     if security is None:
-        raise ValueError("bad security", config.Security)
+        raise ValueError("bad security", config.security)
 
     return Strategy(config, trader, portfolio, security)
 
@@ -50,16 +50,16 @@ class Strategy:
         self._position = self._trader.getPosition(
             self._portfolio, self._security)
         logging.info(
-            f"Init position {self._portfolio.ClientKey} {self._portfolio.Portfolio} {self._security.Name} {self._position}")
+            f"Init position {self._portfolio.clientKey} {self._portfolio.portfolio} {self._security.name} {self._position}")
 
-    def onSignal(self, signal: domaintypes.Signal)-> bool:
+    def onSignal(self, signal: domaintypes.Signal) -> bool:
         # следим только за своими сигналами
-        if not (self._security.Code == signal.Security.Code and
-                self._config.Advisor == signal.Advisor):
+        if not (self._security.code == signal.security.code and
+                self._config.advisor == signal.advisor):
             return False
 
         # считаем, что сигнал слишком старый
-        if signal.DateTime < datetime.datetime.now()-datetime.timedelta(minutes=9):
+        if signal.dateTime < datetime.datetime.now()-datetime.timedelta(minutes=9):
             return False
 
         if self._amount is None:
@@ -71,20 +71,20 @@ class Strategy:
             return False
 
         position = self.computeDesiredPosition(signal)
-        return self.rebalance(signal.Price, position)
+        return self.rebalance(signal.price, position)
 
     def computeDesiredPosition(self, signal: domaintypes.Signal) -> float:
         if self._basePrice is None:
-            self._basePrice = signal.Price
+            self._basePrice = signal.price
             logging.debug(
-                f"Init base price {self._security.Name} {signal.DateTime} {self._basePrice}")
-        if signal.Position > 0:
-            position = signal.Position * self._config.LongLever
+                f"Init base price {self._security.name} {signal.dateTime} {self._basePrice}")
+        if signal.position > 0:
+            position = signal.position * self._config.longLever
         else:
-            position = signal.Position * self._config.ShortLever
-        position = self._config.Weight * \
-            max(-self._config.MaxLever, min(self._config.MaxLever, position))
-        return position * self._amount / (self._basePrice * self._security.Lever)
+            position = signal.position * self._config.shortLever
+        position = self._config.weight * \
+            max(-self._config.maxLever, min(self._config.maxLever, position))
+        return position * self._amount / (self._basePrice * self._security.lever)
 
     def rebalance(self, price: float, desiredPosition: float) -> bool:
         volume = int(desiredPosition - self._position)
@@ -95,15 +95,16 @@ class Strategy:
         traderPos = int(self._trader.getPosition(
             self._portfolio, self._security))
         if self._position != traderPos:
-            logging.warning(f"Check position {self._position} {traderPos} !")
+            logging.warning(
+                f"Check position failed {self._position} {traderPos}")
             return False
 
         price = _priceWithSlippage(price, volume)
         self._trader.registerOrder(domaintypes.Order(
-            Portfolio=self._portfolio,
-            Security=self._security,
-            Volume=volume,
-            Price=price,
+            portfolio=self._portfolio,
+            security=self._security,
+            volume=volume,
+            price=price,
         ))
         self._position += volume
         return True
@@ -113,9 +114,9 @@ class Strategy:
             self._portfolio, self._security))
         statusOk = traderPos == self._position
         return {
-            "Client": self._portfolio.ClientKey,
-            "Portfolio": self._portfolio.Portfolio,
-            "Security": self._security.Name,
+            "Client": self._portfolio.clientKey,
+            "Portfolio": self._portfolio.portfolio,
+            "Security": self._security.name,
             "StrategyPos": self._position,
             "TraderPos": traderPos,
             "Status": "+" if statusOk else "!",

@@ -21,9 +21,11 @@ class StrategyManager:
             signalService.subscribe()
 
     def checkStatus(self):
+        print(f"Signal size: {len(self._signals)}")
         for signalService in self._signals:
             print(f"{signalService.status()}")
 
+        print(f"Strategy size: {len(self._strategies)}")
         for strategyService in self._strategies:
             print(f"{strategyService.status()}")
 
@@ -42,12 +44,12 @@ class StrategyManager:
         portfolioLimits = dict()
         for strategyService in self._strategies:
             portfolio = strategyService._portfolio
-            amount = portfolioLimits.get(portfolio.Portfolio)
+            amount = portfolioLimits.get(portfolio.portfolio)
             if amount is None:
                 amount = strategyService._trader.incomingAmount(portfolio)
-                portfolioLimits[portfolio.Portfolio] = amount
+                portfolioLimits[portfolio.portfolio] = amount
                 logging.info(
-                    f"Init portfolio {portfolio.ClientKey} {portfolio.Portfolio} {amount}")
+                    f"Init portfolio {portfolio.clientKey} {portfolio.portfolio} {amount}")
             strategyService.initAmount(amount)
             strategyService.initPos()
 

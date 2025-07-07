@@ -5,14 +5,14 @@ import enum
 
 
 class Candle(NamedTuple):
-    Interval: str
-    SecurityCode: str
-    DateTime: datetime.datetime
-    OpenPrice: float
-    HighPrice: float
-    LowPrice: float
-    ClosePrice: float
-    Volume: float
+    interval: str
+    securityCode: str
+    dateTime: datetime.datetime
+    openPrice: float
+    highPrice: float
+    lowPrice: float
+    closePrice: float
+    volume: float
 
 
 class CandleInterval(enum.StrEnum):
@@ -22,43 +22,43 @@ class CandleInterval(enum.StrEnum):
 
 
 class SecurityInfo(NamedTuple):
-    Name: str
+    name: str
     "Название инструмента"
-    Code: str
+    code: str
     "Код инструмента"
-    ClassCode: str
+    classCode: str
     "Код класса"
-    PricePrecision: int
+    pricePrecision: int
     "точность (кол-во знаков после запятой). Если шаг цены может быть не круглым (0.05), то этого будет недостаточно."
-    PriceStep: float
+    priceStep: float
     "шаг цены"
-    PriceStepCost: float
+    priceStepCost: float
     "Стоимость шага цены"
-    Lever: float
+    lever: float
     "Плечо. Для фьючерсов = PriceStepCost/PriceStep."
 
 
 class Signal(NamedTuple):
-    Advisor: str
-    Security: SecurityInfo
-    DateTime: datetime.datetime
-    Price: float
-    Position: float
-    Details: Any
+    advisor: str
+    security: SecurityInfo
+    dateTime: datetime.datetime
+    price: float
+    position: float
+    details: Any
 
 
 class PortfolioInfo(NamedTuple):
-    ClientKey: str
+    clientKey: str
     "MultyTrader использует это поле для маршрутизации клиентов"
-    Firm: str
-    Portfolio: str
+    firm: str
+    portfolio: str
 
 
 class Order(NamedTuple):
-    Portfolio: PortfolioInfo
-    Security: SecurityInfo
-    Volume: int
-    Price: float
+    portfolio: PortfolioInfo
+    security: SecurityInfo
+    volume: int
+    price: float
 
 
 class SecurityInfoService(Protocol):

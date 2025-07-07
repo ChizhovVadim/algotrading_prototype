@@ -20,7 +20,7 @@ class QuikTrader(domaintypes.SupportsClose):
         def onNewCandle(data):
             candle = _parseQuikCandle(data["data"])
             # чтобы очередь не переполнялась старыми барами
-            if candle.DateTime >= startCandles:
+            if candle.dateTime >= startCandles:
                 marketData.put(candle)
 
         self._quik.OnNewCandle = onNewCandle
@@ -38,30 +38,30 @@ class QuikTrader(domaintypes.SupportsClose):
         # Если не указывать размер, то может прийти слишком много баров и unmarshal большой json
         MaxBars = 5_000
         new_bars = self._quik.GetCandlesFromDataSource(
-            security.ClassCode, security.Code, _quikTimeframe(candleInterval), MaxBars)['data']
+            security.classCode, security.code, _quikTimeframe(candleInterval), MaxBars)['data']
         new_bars = [_parseQuikCandle(c) for c in new_bars]
         # последний бар за сегодня может быть не завершен
-        if new_bars and new_bars[-1].DateTime.date() == datetime.date.today():
+        if new_bars and new_bars[-1].dateTime.date() == datetime.date.today():
             new_bars.pop()
         return new_bars
 
     def subscribeCandles(self, security: domaintypes.SecurityInfo, candleInterval: str):
         self._quik.SubscribeToCandles(
-            security.ClassCode, security.Code, _quikTimeframe(candleInterval))
+            security.classCode, security.code, _quikTimeframe(candleInterval))
 
     def incomingAmount(self, portfolio: domaintypes.PortfolioInfo) -> float:
         resp = self._quik.GetPortfolioInfoEx(
-            portfolio.Firm, portfolio.Portfolio, 0)
+            portfolio.firm, portfolio.portfolio, 0)
         return float(resp["data"]["start_limit_open_pos"])
 
     def getPosition(self, portfolio: domaintypes.PortfolioInfo,
                     security: domaintypes.SecurityInfo) -> float:
-        if security.ClassCode == moex.FUTURESCLASSCODE:
+        if security.classCode == moex.FUTURESCLASSCODE:
             resp = self._quik.GetFuturesHolding(
-                portfolio.Firm, portfolio.Portfolio, security.Code, 0)
+                portfolio.firm, portfolio.portfolio, security.code, 0)
             data = resp.get("data")
             if data is None:
-                logging.warning(f"Position {security.Name} empty.")
+                logging.warning(f"Position {security.name} empty.")
                 return 0.0
             return float(data["totalnet"])
 
@@ -70,20 +70,20 @@ class QuikTrader(domaintypes.SupportsClose):
     def registerOrder(self, order: domaintypes.Order):
         transaction = {  # Все значения должны передаваться в виде строк
             'ACTION': 'NEW_ORDER',
-            'SECCODE': order.Security.Code,
-            'CLASSCODE': order.Security.ClassCode,
-            'ACCOUNT': order.Portfolio.Portfolio,
-            'PRICE': _formatPrice(order.Price, order.Security.PricePrecision, order.Security.PriceStep),
+            'SECCODE': order.security.code,
+            'CLASSCODE': order.security.classCode,
+            'ACCOUNT': order.portfolio.portfolio,
+            'PRICE': _formatPrice(order.price, order.security.pricePrecision, order.security.priceStep),
             'TRANS_ID': str(self._transId),
             'CLIENT_CODE': str(self._transId),
         }
         self._transId += 1
-        if order.Volume > 0:
+        if order.volume > 0:
             transaction['OPERATION'] = "B"
-            transaction['QUANTITY'] = str(order.Volume)
+            transaction['QUANTITY'] = str(order.volume)
         else:
             transaction['OPERATION'] = "S"
-            transaction['QUANTITY'] = str(-order.Volume)
+            transaction['QUANTITY'] = str(-order.volume)
 
         self._quik.SendTransaction(transaction)
 
@@ -106,14 +106,14 @@ def _parseQuikDateTime(dt) -> datetime.datetime:
 
 def _parseQuikCandle(row) -> domaintypes.Candle:
     return domaintypes.Candle(
-        Interval="minutes5",  # TODO
-        SecurityCode=row["sec"],
-        DateTime=_parseQuikDateTime(row["datetime"]),
-        OpenPrice=float(row["open"]),
-        HighPrice=float(row["high"]),
-        LowPrice=float(row["low"]),
-        ClosePrice=float(row["close"]),
-        Volume=float(row["volume"]))
+        interval="minutes5",  # TODO
+        securityCode=row["sec"],
+        dateTime=_parseQuikDateTime(row["datetime"]),
+        openPrice=float(row["open"]),
+        highPrice=float(row["high"]),
+        lowPrice=float(row["low"]),
+        closePrice=float(row["close"]),
+        volume=float(row["volume"]))
 
 
 def _formatPrice(price: float, pricePrecision: int, priceStep: float) -> str:

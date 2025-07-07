@@ -7,6 +7,8 @@ import threading
 import domaintypes
 from . import moex
 
+from history.candlestorage import CandleStorage
+
 from .traders.quiktrader import QuikTrader
 from .traders.multytrader import MultyTrader
 from .traders.mocktrader import MockTrader
@@ -24,7 +26,7 @@ def initLogger():
         f"{today.strftime("%Y-%m-%d")}.txt")
     logging.basicConfig(
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
-        level=logging.DEBUG,
+        level=logging.INFO,
         handlers=[logging.StreamHandler(), logging.FileHandler(logPath)])
 
 
@@ -41,31 +43,34 @@ def initStrategies(trader: MultyTrader, strategyManager: StrategyManager, inbox:
     secInfoService = moex.HardCodeSecurityInfoService()
 
     # init signals
+    candleStorage = None
+    #candleStorage = CandleStorage(os.path.expanduser(
+    #    "~/TradingData"), domaintypes.CandleInterval.MINUTES5)
     signalConfigs = [
         SignalConfig("sample_momentum", "CNY-9.25"),
         SignalConfig("sample_momentum", "Si-9.25"),
     ]
     for signalConfig in signalConfigs:
         strategyManager.addSignal(initSignal(
-            secInfoService, marketDataService, signalConfig))
+            secInfoService, marketDataService, candleStorage, signalConfig))
 
     # init strategies
     strategyConfigs = [
         StrategyConfig(
-            Advisor="sample_momentum",
-            Security="CNY-9.25",
-            LongLever=9.0,
-            ShortLever=9.0,
-            MaxLever=9.0,
-            Weight=0.6,
+            advisor="sample_momentum",
+            security="CNY-9.25",
+            longLever=9.0,
+            shortLever=9.0,
+            maxLever=9.0,
+            weight=0.6,
         ),
         StrategyConfig(
-            Advisor="sample_momentum",
-            Security="Si-9.25",
-            LongLever=9.0,
-            ShortLever=9.0,
-            MaxLever=9.0,
-            Weight=0.4,
+            advisor="sample_momentum",
+            security="Si-9.25",
+            longLever=9.0,
+            shortLever=9.0,
+            maxLever=7.0,
+            weight=0.4,
         ),
     ]
     portfolio = domaintypes.PortfolioInfo("paper", "", "test")

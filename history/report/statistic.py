@@ -31,9 +31,9 @@ def computeHprStatistcs(hprs: list[DateSum]) -> HprStatistcs:
     "По дневным доходностям формирует статистику"
 
     # TODO сразу преобразовать в log?
-    total_hpr = functools.reduce(lambda x, y: x*y.Sum, hprs, 1.0)
+    total_hpr = functools.reduce(lambda x, y: x*y.sum, hprs, 1.0)
     month_hpr = total_hpr ** (22.0/len(hprs))
-    stdev = statistics.stdev((math.log(x.Sum) for x in hprs))
+    stdev = statistics.stdev((math.log(x.sum) for x in hprs))
     return HprStatistcs(
         MonthHpr=month_hpr,
         StDev=stdev,
@@ -48,7 +48,7 @@ def computeHprStatistcs(hprs: list[DateSum]) -> HprStatistcs:
 
 
 def calcAvar(hprs: list[DateSum]) -> float:
-    hprs = [x.Sum for x in hprs]
+    hprs = [x.sum for x in hprs]
     hprs.sort()
     hprs = hprs[:len(hprs)//20]
     return statistics.mean(hprs)
@@ -59,12 +59,12 @@ def hprsByPeriod(hprs: list[DateSum], period) -> list[DateSum]:
     lastDate = None
     lastHpr = 1.0
     for hpr in hprs:
-        curPeriod = period(hpr.Date)
+        curPeriod = period(hpr.date)
         if lastDate is not None and period(lastDate) != curPeriod:
             result.append(DateSum(lastDate, lastHpr))
             lastHpr = 1.0
         lastDate = curPeriod
-        lastHpr *= hpr.Sum
+        lastHpr *= hpr.sum
     if lastDate is not None:
         result.append(DateSum(lastDate, lastHpr))
     return result
@@ -76,17 +76,17 @@ def compute_drawdown_info(hprs: list[DateSum]) -> DrawdownInfo:
     longestDrawdown = 0
     currentDrawdownDays = 0
     maxDrawdown = 0.0
-    highEquityDate = hprs[0].Date
+    highEquityDate = hprs[0].date
 
     for hpr in hprs:
-        currentSum += math.log(hpr.Sum)
+        currentSum += math.log(hpr.sum)
         if currentSum > maxSum:
             maxSum = currentSum
-            highEquityDate = hpr.Date
+            highEquityDate = hpr.date
         curDrawdown = currentSum - maxSum
         if curDrawdown < maxDrawdown:
             maxDrawdown = curDrawdown
-        currentDrawdownDays = (hpr.Date - highEquityDate).days
+        currentDrawdownDays = (hpr.date - highEquityDate).days
         if currentDrawdownDays > longestDrawdown:
             longestDrawdown = currentDrawdownDays
 
@@ -117,7 +117,7 @@ def printReport(r: HprStatistcs):
 def printHprs(hprs: list[DateSum]):
     for item in hprs:
         print(
-            f"{item.Date.strftime(displayDateLayout)} {hprDisplay(item.Sum):>8,.1f}%")
+            f"{item.date.strftime(displayDateLayout)} {hprDisplay(item.sum):>8,.1f}%")
 
 
 def printDrawdownInfo(data: DrawdownInfo):

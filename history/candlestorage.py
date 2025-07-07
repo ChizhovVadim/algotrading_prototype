@@ -50,13 +50,13 @@ class CandleStorage:
                 data = [
                     securityCode,
                     "5",
-                    c.DateTime.strftime("%Y%m%d"),
-                    (c.DateTime.minute+100*c.DateTime.hour)*100,
-                    c.OpenPrice,  # TODO f
-                    c.HighPrice,
-                    c.LowPrice,
-                    c.ClosePrice,
-                    c.Volume,
+                    c.dateTime.strftime("%Y%m%d"),
+                    (c.dateTime.minute+100*c.dateTime.hour)*100,
+                    c.openPrice,  # TODO f
+                    c.highPrice,
+                    c.lowPrice,
+                    c.closePrice,
+                    c.volume,
                 ]
                 writer.writerow(data)
 
@@ -69,7 +69,7 @@ class CandleStorage:
     def candleByDate(self, securityCode: str, date: datetime.datetime) -> Candle:
         result = None
         for candle in self.read(securityCode):
-            if candle.DateTime > date:
+            if candle.dateTime > date:
                 break
             result = candle
         return result
@@ -77,7 +77,7 @@ class CandleStorage:
     def candleBeforeDate(self, securityCode: str, date: datetime.datetime) -> Candle:
         result = None
         for candle in self.read(securityCode):
-            if candle.DateTime >= date:
+            if candle.dateTime >= date:
                 break
             result = candle
         return result

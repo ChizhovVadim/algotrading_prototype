@@ -1,11 +1,24 @@
 import argparse
 import logging
 import time
+import sys
 
-from .report.history import reportAdvisor
+from .report import history
 
 
-def historyHandler():
+def statusHandler(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--advisor', type=str, required=True)
+    parser.add_argument('--timeframe', type=str)
+    parser.add_argument('--security', type=str, required=True)
+    parser.add_argument('--count', type=int)
+    args = parser.parse_args(args)
+
+    history.reportStatus(args.advisor, args.timeframe,
+                         args.security, args.count)
+
+
+def historyHandler(args):
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
@@ -20,16 +33,20 @@ def historyHandler():
     parser.add_argument('--finishyear', type=int)
     parser.add_argument('--finishquarter', type=int)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
-    reportAdvisor(args.advisor, args.timeframe, args.security, args.lever, args.slippage,
-                  args.startyear, args.startquarter, args.finishyear, args.finishquarter, args.single)
+    start = time.time()
+    history.reportAdvisor(args.advisor, args.timeframe, args.security, args.lever, args.slippage,
+                          args.startyear, args.startquarter, args.finishyear, args.finishquarter, args.single)
+    print(f"Elapsed: {(time.time()-start):.2f}")
 
 
 def main():
-    start = time.time()
-    historyHandler()
-    print(f"Elapsed: {(time.time()-start):.2f}")
+    cmd = sys.argv[1] if len(sys.argv) >= 2 else None
+    if cmd == "status":
+        statusHandler(sys.argv[2:])
+    else:
+        historyHandler(sys.argv[1:])
 
 
 main()

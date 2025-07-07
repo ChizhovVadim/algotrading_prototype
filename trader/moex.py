@@ -14,24 +14,24 @@ class HardCodeSecurityInfoService:
     def getSecurityInfo(self, securityName: str) -> SecurityInfo:
         if securityName.startswith("Si"):
             return SecurityInfo(
-                Name=securityName,
-                ClassCode=FUTURESCLASSCODE,
-                Code=_encodeSecurity(securityName),
-                PricePrecision=0,
-                PriceStep=1,
-                PriceStepCost=1,
-                Lever=1,
+                name=securityName,
+                classCode=FUTURESCLASSCODE,
+                code=_encodeSecurity(securityName),
+                pricePrecision=0,
+                priceStep=1,
+                priceStepCost=1,
+                lever=1,
             )
         if securityName.startswith("CNY"):
             return SecurityInfo(
-                Name=securityName,
-                ClassCode=FUTURESCLASSCODE,
+                name=securityName,
+                classCode=FUTURESCLASSCODE,
                 # можно здесь replace("CNY", "CR")
-                Code=_encodeSecurity(securityName),
-                PricePrecision=3,
-                PriceStep=0.001,
-                PriceStepCost=1,
-                Lever=1000,
+                code=_encodeSecurity(securityName),
+                pricePrecision=3,
+                priceStep=0.001,
+                priceStepCost=1,
+                lever=1000,
             )
         return None
 

@@ -27,11 +27,11 @@ def advisorFromIndicator(trendIndicator):
 
     def f(c: Candle) -> Advice:
         nonlocal position
-        trendIndicator.add(c.DateTime, c.ClosePrice)
+        trendIndicator.add(c.dateTime, c.closePrice)
         trend = trendIndicator.value()
         if trend is not None:
             position = trend
-        return Advice(c.SecurityCode, c.DateTime, c.ClosePrice, position, None)
+        return Advice(c.securityCode, c.dateTime, c.closePrice, position, None)
     return f
 
 
