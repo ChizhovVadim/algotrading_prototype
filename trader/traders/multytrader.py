@@ -1,4 +1,4 @@
-from domaintypes import Trader, PortfolioInfo, SecurityInfo, Order, SupportsClose
+from domaintypes import Trader, Portfolio, Security, Order, PortfolioLimits, SupportsClose
 
 
 class MultyTrader:
@@ -11,10 +11,10 @@ class MultyTrader:
     def add(self, trader: Trader, clientKey: str):
         self.__traders[clientKey] = trader
 
-    def incomingAmount(self, portfolio: PortfolioInfo) -> float:
-        return self.__traders[portfolio.clientKey].incomingAmount(portfolio)
+    def getPortfolioLimits(self, portfolio: Portfolio) -> PortfolioLimits:
+        return self.__traders[portfolio.clientKey].getPortfolioLimits(portfolio)
 
-    def getPosition(self, portfolio: PortfolioInfo, security: SecurityInfo) -> float:
+    def getPosition(self, portfolio: Portfolio, security: Security) -> float:
         return self.__traders[portfolio.clientKey].getPosition(portfolio, security)
 
     def registerOrder(self, order: Order):

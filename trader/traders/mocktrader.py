@@ -1,18 +1,18 @@
-from domaintypes import PortfolioInfo, SecurityInfo, Order
 import logging
+from domaintypes import Portfolio, Security, Order, PortfolioLimits
 
 
 class MockTrader:
     def __init__(self):
         self._positions = dict()
 
-    def incomingAmount(self, portfolio: PortfolioInfo) -> float:
-        return 1_000_000
+    def getPortfolioLimits(self, portfolio: Portfolio) -> PortfolioLimits:
+        return PortfolioLimits(1_000_000., 0., 0., 0.)
 
-    def _positionKey(self, portfolio: PortfolioInfo, security: SecurityInfo) -> str:
+    def _positionKey(self, portfolio: Portfolio, security: Security) -> str:
         return portfolio.portfolio+security.code
 
-    def getPosition(self, portfolio: PortfolioInfo, security: SecurityInfo) -> float:
+    def getPosition(self, portfolio: Portfolio, security: Security) -> float:
         return self._positions.get(self._positionKey(portfolio, security), 0)
 
     def registerOrder(self, order: Order):
@@ -22,11 +22,11 @@ class MockTrader:
         posKey = self._positionKey(order.portfolio, order.security)
         self._positions[posKey] = self._positions.get(posKey, 0) + order.volume
 
-    def getLastCandles(self, security: SecurityInfo,
+    def getLastCandles(self, security: Security,
                        candleInterval: str):
         return []
 
-    def subscribeCandles(self, security: SecurityInfo, candleInterval: str):
+    def subscribeCandles(self, security: Security, candleInterval: str):
         pass
 
 

@@ -17,7 +17,7 @@ class StrategyConfig(NamedTuple):
 def initStrategy(
     securityInfoService: domaintypes.SecurityInfoService,
     trader: domaintypes.Trader,
-    portfolio: domaintypes.PortfolioInfo,
+    portfolio: domaintypes.Portfolio,
     config: StrategyConfig,
 ):
     security = securityInfoService.getSecurityInfo(config.security)
@@ -31,8 +31,8 @@ class Strategy:
     def __init__(self,
                  config: StrategyConfig,
                  trader: domaintypes.Trader,
-                 portfolio: domaintypes.PortfolioInfo,
-                 security: domaintypes.SecurityInfo,
+                 portfolio: domaintypes.Portfolio,
+                 security: domaintypes.Security,
                  ):
 
         self._config = config
@@ -108,6 +108,9 @@ class Strategy:
         ))
         self._position += volume
         return True
+
+    def closeAll(self):
+        pass
 
     def status(self):
         traderPos = int(self._trader.getPosition(

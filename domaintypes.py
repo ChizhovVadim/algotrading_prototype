@@ -21,7 +21,7 @@ class CandleInterval(enum.StrEnum):
     DAILY = "daily"
 
 
-class SecurityInfo(NamedTuple):
+class Security(NamedTuple):
     name: str
     "Название инструмента"
     code: str
@@ -40,45 +40,61 @@ class SecurityInfo(NamedTuple):
 
 class Signal(NamedTuple):
     advisor: str
-    security: SecurityInfo
+    security: Security
     dateTime: datetime.datetime
     price: float
     position: float
     details: Any
 
 
-class PortfolioInfo(NamedTuple):
+class Portfolio(NamedTuple):
     clientKey: str
     "MultyTrader использует это поле для маршрутизации клиентов"
     firm: str
     portfolio: str
+    amountWeight: float | None
+    amountUpper: float | None
 
 
 class Order(NamedTuple):
-    portfolio: PortfolioInfo
-    security: SecurityInfo
+    portfolio: Portfolio
+    security: Security
     volume: int
     price: float
 
 
+class PortfolioLimits(NamedTuple):
+    startLimitOpenPos: float
+    "Лимит открытых позиций на начало дня"
+    usedLimOpenPos: float
+    "Текущие чистые позиции"
+    varMargin: float
+    "Вариац. маржа"
+    accVarMargin: float
+    "Накопленная вариационная маржа с учётом премии по опционам и биржевым сборам"
+
+
 class SecurityInfoService(Protocol):
-    def getSecurityInfo(self, securityName: str) -> SecurityInfo:
+    def getSecurityInfo(self, securityName: str) -> Security:
         pass
 
 
 class MarketDataService(Protocol):
-    def getLastCandles(self, security: SecurityInfo, candleInterval: str) -> Iterable[Candle]:
+    def getLastCandles(self, security: Security, candleInterval: str) -> Iterable[Candle]:
         pass
 
-    def subscribeCandles(self, security: SecurityInfo, candleInterval: str):
+    def subscribeCandles(self, security: Security, candleInterval: str):
+        pass
+
+    def lastPrice(self, security: Security) -> float:
         pass
 
 
 class Trader(Protocol):
-    def incomingAmount(self, portfolio: PortfolioInfo) -> float:
+    def getPortfolioLimits(self, portfolio: Portfolio) -> PortfolioLimits:
         pass
 
-    def getPosition(self, portfolio: PortfolioInfo, security: SecurityInfo) -> float:
+    def getPosition(self, portfolio: Portfolio, security: Security) -> float:
         pass
 
     def registerOrder(self, order: Order):

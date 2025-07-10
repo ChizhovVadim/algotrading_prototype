@@ -25,6 +25,26 @@ class StrategyManager:
         for signalService in self._signals:
             print(f"{signalService.status()}")
 
+        portfolios = dict()
+        for strategyService in self._strategies:
+            portfolio = strategyService._portfolio
+            if portfolio.portfolio in portfolios:
+                continue
+            limits = strategyService._trader.getPortfolioLimits(portfolio)
+            portfolios[portfolio.portfolio] = {
+                "Client": portfolio.clientKey,
+                "Portfolio": portfolio.portfolio,
+                "StartLimitOpenPos": limits.startLimitOpenPos,
+                "AccVarMargin": limits.accVarMargin,
+                "VarMargin": limits.varMargin,
+                "UsedLimOpenPos": limits.usedLimOpenPos,
+            }
+
+        print(f"Portfolio size: {len(portfolios)}")
+        # TODO Печать в виде таблицы
+        for portfolioStatus in portfolios.values():
+            print(portfolioStatus)
+
         print(f"Strategy size: {len(self._strategies)}")
         for strategyService in self._strategies:
             print(f"{strategyService.status()}")
@@ -40,21 +60,36 @@ class StrategyManager:
                 except Exception as e:
                     logging.error(f"onSignal failed {e}")
 
+    def closeAll(self):
+        # TODO нужно перестать получать сигналы, (чтобы не открыть позицию заново)
+        for strategyService in self._strategies:
+            strategyService.closeAll()
+
     def initLimits(self):
         portfolioLimits = dict()
         for strategyService in self._strategies:
             portfolio = strategyService._portfolio
             amount = portfolioLimits.get(portfolio.portfolio)
             if amount is None:
-                amount = strategyService._trader.incomingAmount(portfolio)
+                amount = self.calcLimit(strategyService._trader, portfolio)
                 portfolioLimits[portfolio.portfolio] = amount
-                logging.info(
-                    f"Init portfolio {portfolio.clientKey} {portfolio.portfolio} {amount}")
             strategyService.initAmount(amount)
             strategyService.initPos()
 
+    def calcLimit(self, trader: domaintypes.Trader, portfolio: domaintypes.Portfolio) -> float:
+        limits = trader.getPortfolioLimits(portfolio)
+        availableAmount = limits.startLimitOpenPos
+        if portfolio.amountWeight is not None:
+            availableAmount *= portfolio.amountWeight
+        if portfolio.amountUpper is not None:
+            availableAmount = min(availableAmount, portfolio.amountUpper)
+        logging.info(
+            f"Init portfolio {portfolio.clientKey} {portfolio.portfolio} {availableAmount}")
+        return availableAmount
+
     def run(self, inbox):
         self.initLimits()
+        self.checkStatus()
         self.subscribe()  # Подписываемся как можно позже перед чтением
         logging.info("Strategies started.")
         # находимся в главном потоке и здесь уже код потокобезопасный
@@ -68,3 +103,5 @@ class StrategyManager:
                 self.checkStatus()
             elif isinstance(message, usercommands.InitLimitsUserCmd):
                 self.initLimits()
+            elif isinstance(message, usercommands.CloseAllUserCmd):
+                self.closeAll()

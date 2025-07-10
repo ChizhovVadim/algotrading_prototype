@@ -30,7 +30,21 @@ def initSignal(
         adv, marketDataService.getLastCandles(security, candleInterval), lastAdvice)
     logging.info(f"Init advice {lastAdvice}")
     start = datetime.datetime.now()+datetime.timedelta(minutes=-10)
-    return SignalService(config, security, candleInterval, adv, marketDataService, start)
+    initSignal = makeSignal(lastAdvice, security, config.advisor)
+    return SignalService(config, security, candleInterval, adv, marketDataService, start, initSignal)
+
+
+def makeSignal(advice, security: domaintypes.Security, advisorName: str) -> domaintypes.Signal | None:
+    if advice is None:
+        return None
+    return domaintypes.Signal(
+        advisor=advisorName,
+        security=security,
+        dateTime=advice.dateTime,
+        price=advice.price,
+        position=advice.position,
+        details="init signal",
+    )
 
 
 def applyHistoryCandles(advisor, candles, lastAdvice):
@@ -52,24 +66,36 @@ def applyHistoryCandles(advisor, candles, lastAdvice):
 class SignalService:
     def __init__(self,
                  signalConfig: SignalConfig,
-                 security: domaintypes.SecurityInfo,
+                 security: domaintypes.Security,
                  candleInterval: str,
                  advisor: advisors.Advisor,
                  marketData: domaintypes.MarketDataService,
-                 start: datetime.datetime):
+                 start: datetime.datetime,
+                 initSignal: domaintypes.Signal | None):
         self._config = signalConfig
         self._security = security
         self._candleInterval = candleInterval
         self._advisor = advisor
         self._marketData = marketData
         self._start = start
-        self._lastSignal = None
+        self._lastSignal = initSignal
 
     def subscribe(self):
         self._marketData.subscribeCandles(self._security, self._candleInterval)
 
     def status(self):
-        return self._lastSignal
+        # return self._lastSignal
+        signal = self._lastSignal
+        if signal is None:
+            return None
+        return {
+            "Advisor": signal.advisor,
+            "Security": signal.security.name,
+            "DateTime": signal.dateTime.strftime("%d.%m.%Y %H:%M"),
+            "Price": signal.price,
+            "Position": signal.position,
+            "Details": signal.details,
+        }
 
     def onMarketData(self, candle: domaintypes.Candle) -> domaintypes.Signal | None:
         # следим только за своими барами
@@ -78,8 +104,7 @@ class SignalService:
             return None
 
         advice = self._advisor(candle)
-        # считаем, что сигнал слишком старый
-        if advice is None or advice.dateTime < self._start:
+        if advice is None:
             return None
 
         signal = domaintypes.Signal(
@@ -90,7 +115,8 @@ class SignalService:
             position=advice.position,
             details=advice.details)
 
-        logging.debug(f"New signal {signal}")
+        if advice.dateTime >= self._start:
+            logging.debug(f"New signal {signal}")
 
         self._lastSignal = signal
         return signal

@@ -33,7 +33,7 @@ class QuikTrader(domaintypes.SupportsClose):
         resp = self._quik.IsConnected()
         return resp["data"] == 1
 
-    def getLastCandles(self, security: domaintypes.SecurityInfo,
+    def getLastCandles(self, security: domaintypes.Security,
                        candleInterval: str) -> list[domaintypes.Candle]:
         # Если не указывать размер, то может прийти слишком много баров и unmarshal большой json
         MaxBars = 5_000
@@ -45,17 +45,20 @@ class QuikTrader(domaintypes.SupportsClose):
             new_bars.pop()
         return new_bars
 
-    def subscribeCandles(self, security: domaintypes.SecurityInfo, candleInterval: str):
+    def subscribeCandles(self, security: domaintypes.Security, candleInterval: str):
         self._quik.SubscribeToCandles(
             security.classCode, security.code, _quikTimeframe(candleInterval))
+    
+    def getPortfolioLimits(self, portfolio: domaintypes.Portfolio) -> domaintypes.PortfolioLimits:
+        resp = self._quik.GetPortfolioInfoEx(portfolio.firm, portfolio.portfolio, 0)
+        start_limit_open_pos = float(resp["data"]["start_limit_open_pos"])
+        used_lim_open_pos = float(resp["data"]["used_lim_open_pos"])
+        varmargin = float(resp["data"]["varmargin"])
+        fut_accured_int = float(resp["data"]["fut_accured_int"])
+        return domaintypes.PortfolioLimits(start_limit_open_pos, used_lim_open_pos, varmargin, fut_accured_int)
 
-    def incomingAmount(self, portfolio: domaintypes.PortfolioInfo) -> float:
-        resp = self._quik.GetPortfolioInfoEx(
-            portfolio.firm, portfolio.portfolio, 0)
-        return float(resp["data"]["start_limit_open_pos"])
-
-    def getPosition(self, portfolio: domaintypes.PortfolioInfo,
-                    security: domaintypes.SecurityInfo) -> float:
+    def getPosition(self, portfolio: domaintypes.Portfolio,
+                    security: domaintypes.Security) -> float:
         if security.classCode == moex.FUTURESCLASSCODE:
             resp = self._quik.GetFuturesHolding(
                 portfolio.firm, portfolio.portfolio, security.code, 0)

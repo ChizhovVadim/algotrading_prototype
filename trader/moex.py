@@ -1,6 +1,6 @@
 import datetime
 import unittest
-from domaintypes import SecurityInfo
+from domaintypes import Security
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=+3), name="MSK")
 
@@ -11,9 +11,9 @@ class HardCodeSecurityInfoService:
     def __init__(self):
         pass
 
-    def getSecurityInfo(self, securityName: str) -> SecurityInfo:
+    def getSecurityInfo(self, securityName: str) -> Security:
         if securityName.startswith("Si"):
-            return SecurityInfo(
+            return Security(
                 name=securityName,
                 classCode=FUTURESCLASSCODE,
                 code=_encodeSecurity(securityName),
@@ -23,7 +23,7 @@ class HardCodeSecurityInfoService:
                 lever=1,
             )
         if securityName.startswith("CNY"):
-            return SecurityInfo(
+            return Security(
                 name=securityName,
                 classCode=FUTURESCLASSCODE,
                 # можно здесь replace("CNY", "CR")
