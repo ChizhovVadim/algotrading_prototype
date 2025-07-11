@@ -21,33 +21,24 @@ class StrategyManager:
             signalService.subscribe()
 
     def checkStatus(self):
-        print(f"Signal size: {len(self._signals)}")
         for signalService in self._signals:
             print(f"{signalService.status()}")
+        print(f"Total signals: {len(self._signals)}")
 
-        portfolios = dict()
+        print(f"{'Client':<10} {'Portfolio':<10} {'StartLimit':>10} {'Available':>10} {'Acc':>10} {'VarMargin':>10} {'Used':>10}")
+        visitedPortfolios = set()
         for strategyService in self._strategies:
             portfolio = strategyService._portfolio
-            if portfolio.portfolio in portfolios:
+            if portfolio.portfolio in visitedPortfolios:
                 continue
+            visitedPortfolios.add(portfolio.portfolio)
             limits = strategyService._trader.getPortfolioLimits(portfolio)
-            portfolios[portfolio.portfolio] = {
-                "Client": portfolio.clientKey,
-                "Portfolio": portfolio.portfolio,
-                "StartLimitOpenPos": limits.startLimitOpenPos,
-                "AccVarMargin": limits.accVarMargin,
-                "VarMargin": limits.varMargin,
-                "UsedLimOpenPos": limits.usedLimOpenPos,
-            }
+            print(f"{portfolio.clientKey:<10} {portfolio.portfolio:<10} {limits.startLimitOpenPos:>10,.0f} {portfolio.amountAvailable:>10,.0f} {limits.accVarMargin:>10,.0f} {limits.varMargin:>10,.0f} {limits.usedLimOpenPos:>10,.0f}")
+        print(f"Total portfolios: {len(visitedPortfolios)}")
 
-        print(f"Portfolio size: {len(portfolios)}")
-        # TODO Печать в виде таблицы
-        for portfolioStatus in portfolios.values():
-            print(portfolioStatus)
-
-        print(f"Strategy size: {len(self._strategies)}")
         for strategyService in self._strategies:
             print(f"{strategyService.status()}")
+        print(f"Total strategies: {len(self._strategies)}")
 
     def onMarketData(self, marketData):
         for signalService in self._signals:
@@ -66,17 +57,18 @@ class StrategyManager:
             strategyService.closeAll()
 
     def initLimits(self):
-        portfolioLimits = dict()
+        self.initPortfolioLimits()
+        self.initStrategyPositions()
+
+    def initPortfolioLimits(self):
+        visitedPortfolios = set()
         for strategyService in self._strategies:
             portfolio = strategyService._portfolio
-            amount = portfolioLimits.get(portfolio.portfolio)
-            if amount is None:
-                amount = self.calcLimit(strategyService._trader, portfolio)
-                portfolioLimits[portfolio.portfolio] = amount
-            strategyService.initAmount(amount)
-            strategyService.initPos()
+            if portfolio.portfolio not in visitedPortfolios:
+                self.initPortfolioLimit(strategyService._trader, portfolio)
+                visitedPortfolios.add(portfolio.portfolio)
 
-    def calcLimit(self, trader: domaintypes.Trader, portfolio: domaintypes.Portfolio) -> float:
+    def initPortfolioLimit(self, trader: domaintypes.Trader, portfolio: domaintypes.Portfolio):
         limits = trader.getPortfolioLimits(portfolio)
         availableAmount = limits.startLimitOpenPos
         if portfolio.amountWeight is not None:
@@ -84,8 +76,12 @@ class StrategyManager:
         if portfolio.amountUpper is not None:
             availableAmount = min(availableAmount, portfolio.amountUpper)
         logging.info(
-            f"Init portfolio {portfolio.clientKey} {portfolio.portfolio} {availableAmount}")
-        return availableAmount
+            f"Init portfolio {portfolio.clientKey} {portfolio.portfolio} {limits.startLimitOpenPos} {availableAmount}")
+        portfolio.amountAvailable = availableAmount
+
+    def initStrategyPositions(self):
+        for strategyService in self._strategies:
+            strategyService.initPos()
 
     def run(self, inbox):
         self.initLimits()

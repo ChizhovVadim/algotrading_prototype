@@ -28,9 +28,9 @@ def initSignal(
             adv, candleStorage.read(security.name), lastAdvice)
     lastAdvice = applyHistoryCandles(
         adv, marketDataService.getLastCandles(security, candleInterval), lastAdvice)
-    logging.info(f"Init advice {lastAdvice}")
     start = datetime.datetime.now()+datetime.timedelta(minutes=-10)
     initSignal = makeSignal(lastAdvice, security, config.advisor)
+    logging.info(f"Init signal {initSignal}")
     return SignalService(config, security, candleInterval, adv, marketDataService, start, initSignal)
 
 
@@ -116,7 +116,12 @@ class SignalService:
             details=advice.details)
 
         if advice.dateTime >= self._start:
-            logging.debug(f"New signal {signal}")
+            posChanged = self._lastSignal is None or \
+                signal.position != self._lastSignal.position
+            if posChanged:
+                logging.info(f"New signal {signal}")
+            else:
+                logging.debug(f"New signal {signal}")
 
         self._lastSignal = signal
         return signal

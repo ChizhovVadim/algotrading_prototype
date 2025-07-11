@@ -1,4 +1,5 @@
 from typing import NamedTuple, Iterable, Any, Protocol
+from dataclasses import dataclass
 import abc
 import datetime
 import enum
@@ -47,13 +48,15 @@ class Signal(NamedTuple):
     details: Any
 
 
-class Portfolio(NamedTuple):
+@dataclass
+class Portfolio:
     clientKey: str
     "MultyTrader использует это поле для маршрутизации клиентов"
     firm: str
     portfolio: str
     amountWeight: float | None
     amountUpper: float | None
+    amountAvailable: float | None
 
 
 class Order(NamedTuple):

@@ -39,12 +39,8 @@ class Strategy:
         self._trader = trader
         self._portfolio = portfolio
         self._security = security
-        self._amount = None
         self._position = None
         self._basePrice = None
-
-    def initAmount(self, amount: float):
-        self._amount = amount
 
     def initPos(self):
         self._position = self._trader.getPosition(
@@ -62,7 +58,7 @@ class Strategy:
         if signal.dateTime < datetime.datetime.now()-datetime.timedelta(minutes=9):
             return False
 
-        if self._amount is None:
+        if self._portfolio.amountAvailable is None:
             logging.warning("strategy amount none")
             return False
 
@@ -84,7 +80,7 @@ class Strategy:
             position = signal.position * self._config.shortLever
         position = self._config.weight * \
             max(-self._config.maxLever, min(self._config.maxLever, position))
-        return position * self._amount / (self._basePrice * self._security.lever)
+        return position * self._portfolio.amountAvailable / (self._basePrice * self._security.lever)
 
     def rebalance(self, price: float, desiredPosition: float) -> bool:
         volume = int(desiredPosition - self._position)

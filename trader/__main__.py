@@ -73,7 +73,14 @@ def initStrategies(trader: MultyTrader, strategyManager: StrategyManager, inbox:
             weight=0.4,
         ),
     ]
-    portfolio = domaintypes.Portfolio("paper", "", "test", None, None)
+    portfolio = domaintypes.Portfolio(
+        clientKey="paper",
+        firm="",
+        portfolio="test",
+        amountWeight=None,
+        amountUpper=None,
+        amountAvailable=None,
+    )
     for strategyConfig in strategyConfigs:
         strategyManager.addStrategy(initStrategy(
             secInfoService, trader, portfolio, strategyConfig))
