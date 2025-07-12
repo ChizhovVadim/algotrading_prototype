@@ -1,4 +1,6 @@
 import logging
+import queue
+
 import domaintypes
 from .strategyservice import Strategy
 from .signalservice import SignalService
@@ -9,6 +11,7 @@ class StrategyManager:
     def __init__(self):
         self._signals = []
         self._strategies = []
+        self._shouldCheckStatus = False
 
     def addSignal(self, signal: SignalService):
         self._signals.append(signal)
@@ -47,7 +50,8 @@ class StrategyManager:
                 continue
             for strategyService in self._strategies:
                 try:
-                    strategyService.onSignal(signal)
+                    if strategyService.onSignal(signal):
+                        self._shouldCheckStatus = True
                 except Exception as e:
                     logging.error(f"onSignal failed {e}")
 
@@ -83,14 +87,22 @@ class StrategyManager:
         for strategyService in self._strategies:
             strategyService.initPos()
 
-    def run(self, inbox):
+    def run(self, inbox: queue.Queue):
         self.initLimits()
-        self.checkStatus()
         self.subscribe()  # Подписываемся как можно позже перед чтением
         logging.info("Strategies started.")
+        self._shouldCheckStatus = True
         # находимся в главном потоке и здесь уже код потокобезопасный
         while True:
-            message = inbox.get()  # можно с таймаутом, чтобы иногда вызывать checkStatus()
+            try:
+                timeout = 10.0 if self._shouldCheckStatus else None
+                message = inbox.get(timeout=timeout)
+            except queue.Empty:
+                if self._shouldCheckStatus:
+                    self._shouldCheckStatus = False
+                    self.checkStatus()
+                continue
+
             if isinstance(message, domaintypes.Candle):
                 self.onMarketData(message)
             elif isinstance(message, usercommands.ExitUserCmd):
