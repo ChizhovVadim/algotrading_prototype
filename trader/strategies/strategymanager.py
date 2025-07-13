@@ -52,8 +52,8 @@ class StrategyManager:
                 try:
                     if strategyService.onSignal(signal):
                         self._shouldCheckStatus = True
-                except Exception as e:
-                    logging.error(f"onSignal failed {e}")
+                except Exception:
+                    logging.exception("onSignal failed")
 
     def closeAll(self):
         # TODO нужно перестать получать сигналы, (чтобы не открыть позицию заново)
