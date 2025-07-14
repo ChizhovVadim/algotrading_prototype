@@ -40,6 +40,7 @@ class Strategy:
         self._portfolio = portfolio
         self._security = security
         self._position = None
+        """планируемая позиция в портфеле (после исполнения заявки)"""
         self._basePrice = None
 
     def initPos(self):

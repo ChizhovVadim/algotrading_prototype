@@ -28,7 +28,7 @@ class StrategyManager:
             print(f"{signalService.status()}")
         print(f"Total signals: {len(self._signals)}")
 
-        print(f"{'Client':<10} {'Portfolio':<10} {'StartLimit':>10} {'Available':>10} {'Acc':>10} {'VarMargin':>10} {'Used':>10}")
+        print(f"{'Client':<10} {'Portfolio':<10} {'StartLimit':>10} {'Available':>10} {'VarMargin':>10} {'VarMargin':>10} {'Used':>10}")
         visitedPortfolios = set()
         for strategyService in self._strategies:
             portfolio = strategyService._portfolio
@@ -36,7 +36,14 @@ class StrategyManager:
                 continue
             visitedPortfolios.add(portfolio.portfolio)
             limits = strategyService._trader.getPortfolioLimits(portfolio)
-            print(f"{portfolio.clientKey:<10} {portfolio.portfolio:<10} {limits.startLimitOpenPos:>10,.0f} {portfolio.amountAvailable:>10,.0f} {limits.accVarMargin:>10,.0f} {limits.varMargin:>10,.0f} {limits.usedLimOpenPos:>10,.0f}")
+            varMargin = limits.accVarMargin + limits.varMargin
+            if portfolio.amountAvailable:
+                varMarginRatio = varMargin / portfolio.amountAvailable
+                usedRatio = limits.usedLimOpenPos / portfolio.amountAvailable
+            else:
+                varMarginRatio = 0
+                usedRatio = 0
+            print(f"{portfolio.clientKey:<10} {portfolio.portfolio:<10} {limits.startLimitOpenPos:>10,.0f} {portfolio.amountAvailable:>10,.0f} {limits.varMargin:>10,.0f} {varMarginRatio:>10,.2%} {usedRatio:>10,.2%}")
         print(f"Total portfolios: {len(visitedPortfolios)}")
 
         for strategyService in self._strategies:
@@ -57,6 +64,7 @@ class StrategyManager:
 
     def closeAll(self):
         # TODO нужно перестать получать сигналы, (чтобы не открыть позицию заново)
+        self._shouldCheckStatus = True
         for strategyService in self._strategies:
             strategyService.closeAll()
 
