@@ -11,8 +11,7 @@ def applyLever(hprs: list[DateSum], lever: float) -> list[DateSum]:
 
 def limitStdev(stdev: float):
     def f(hprs: list[DateSum]) -> bool:
-        nonlocal stdev
-        return statistics.stdev((math.log(x.sum) for x in hprs)) < stdev
+        return statistics.stdev((math.log(x.sum) for x in hprs)) <= stdev
     return f
 
 
@@ -24,8 +23,9 @@ def optimalLever(hprs: list[DateSum], riskSpecification) -> float:
     maxLever = 1.0/(1.0-minHpr)
     bestHpr = 1.0
     bestLever = 0.0
-    for ratio in range(1, 100):
-        lever = maxLever*ratio/100.0
+    STEP = 0.1
+    lever = STEP
+    while lever <= maxLever:
         leverHprs = applyLever(hprs, lever)
         if riskSpecification and not riskSpecification(leverHprs):
             break
@@ -34,4 +34,5 @@ def optimalLever(hprs: list[DateSum], riskSpecification) -> float:
             break
         bestHpr = hpr
         bestLever = lever
+        lever += STEP
     return bestLever
