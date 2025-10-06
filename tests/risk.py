@@ -1,8 +1,7 @@
 import math
 import statistics
 import functools
-
-from .datesum import DateSum
+from .domain import DateSum
 
 
 def applyLever(hprs: list[DateSum], lever: float) -> list[DateSum]:
@@ -24,7 +23,7 @@ def optimalLever(hprs: list[DateSum], riskSpecification) -> float:
     bestHpr = 1.0
     bestLever = 0.0
     STEP = 0.1
-    lever = STEP
+    lever = STEP  # Шибко умные могли бы использовать метод деления отрезка пополам
     while lever <= maxLever:
         leverHprs = applyLever(hprs, lever)
         if riskSpecification and not riskSpecification(leverHprs):

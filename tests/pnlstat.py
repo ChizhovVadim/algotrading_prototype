@@ -1,49 +1,52 @@
 import datetime
+import calendar
 import functools
 import statistics
 import math
 from typing import NamedTuple
 
-from .import dateutils
-from .datesum import DateSum
+from .domain import DateSum
 
 displayDateLayout = "%d.%m.%Y"
 
+
 class DrawdownInfo(NamedTuple):
-    HighEquityDate: datetime.date
-    MaxDrawdown: float
-    LongestDrawdown: int
-    CurrentDrawdown: float
-    CurrentDrawdownDays: int
+    highEquityDate: datetime.date
+    maxDrawdown: float
+    longestDrawdown: int
+    currentDrawdown: float
+    currentDrawdownDays: int
 
 
 class HprStatistcs(NamedTuple):
-    MonthHpr: float
-    StDev: float
-    AVaR: float
-    DayHprs: list[DateSum]
-    MonthHprs: list[DateSum]
-    YearHprs: list[DateSum]
-    DrawdownInfo: DrawdownInfo
+    monthHpr: float
+    stDev: float
+    aVaR: float
+    dayHprs: list[DateSum]
+    monthHprs: list[DateSum]
+    yearHprs: list[DateSum]
+    drawdownInfo: DrawdownInfo
+
+
+def computeAndPrint(hprs: list[DateSum]):
+    printReport(computeHprStatistcs(hprs))
 
 
 def computeHprStatistcs(hprs: list[DateSum]) -> HprStatistcs:
-    "По дневным доходностям формирует статистику"
+    "По дневным доходностям формирует отчет"
 
     # TODO сразу преобразовать в log?
     total_hpr = functools.reduce(lambda x, y: x*y.sum, hprs, 1.0)
     month_hpr = total_hpr ** (22.0/len(hprs))
     stdev = statistics.stdev((math.log(x.sum) for x in hprs))
     return HprStatistcs(
-        MonthHpr=month_hpr,
-        StDev=stdev,
-        AVaR=calcAvar(hprs),
-        DayHprs=hprs,
-        # ф-ция datetime для date объектов
-        MonthHprs=hprsByPeriod(hprs, dateutils.lastDayOfMonth),
-        # ф-ция datetime для date объектов
-        YearHprs=hprsByPeriod(hprs, dateutils.lastDayOfYear),
-        DrawdownInfo=compute_drawdown_info(hprs),
+        monthHpr=month_hpr,
+        stDev=stdev,
+        aVaR=calcAvar(hprs),
+        dayHprs=hprs,
+        monthHprs=hprsByPeriod(hprs, lastDayOfMonth),
+        yearHprs=hprsByPeriod(hprs, lastDayOfYear),
+        drawdownInfo=compute_drawdown_info(hprs),
     )
 
 
@@ -91,27 +94,27 @@ def compute_drawdown_info(hprs: list[DateSum]) -> DrawdownInfo:
             longestDrawdown = currentDrawdownDays
 
     return DrawdownInfo(
-        HighEquityDate=highEquityDate,
-        MaxDrawdown=math.exp(maxDrawdown),
-        LongestDrawdown=longestDrawdown,
-        CurrentDrawdown=math.exp(currentSum-maxSum),
-        CurrentDrawdownDays=currentDrawdownDays,
+        highEquityDate=highEquityDate,
+        maxDrawdown=math.exp(maxDrawdown),
+        longestDrawdown=longestDrawdown,
+        currentDrawdown=math.exp(currentSum-maxSum),
+        currentDrawdownDays=currentDrawdownDays,
     )
 
 
 def printReport(r: HprStatistcs):
-    print(f"Ежемесячная доходность {hprDisplay(r.MonthHpr):.1f}%")
+    print(f"Ежемесячная доходность {hprDisplay(r.monthHpr):.1f}%")
     print(
-        f"Среднеквадратичное отклонение доходности за день {r.StDev*100:.1f}%")
+        f"Среднеквадратичное отклонение доходности за день {r.stDev*100:.1f}%")
     print(
-        f"Средний убыток в день среди 5% худших дней {hprDisplay(r.AVaR):.1f}%")
-    printDrawdownInfo(r.DrawdownInfo)
+        f"Средний убыток в день среди 5% худших дней {hprDisplay(r.aVaR):.1f}%")
+    printDrawdownInfo(r.drawdownInfo)
     print("Доходности по дням")
-    printHprs(r.DayHprs[-20:])
+    printHprs(r.dayHprs[-20:])
     print("Доходности по месяцам")
-    printHprs(r.MonthHprs)
+    printHprs(r.monthHprs)
     print("Доходности по годам")
-    printHprs(r.YearHprs)
+    printHprs(r.yearHprs)
 
 
 def printHprs(hprs: list[DateSum]):
@@ -121,13 +124,22 @@ def printHprs(hprs: list[DateSum]):
 
 
 def printDrawdownInfo(data: DrawdownInfo):
-    print(f"Максимальная просадка {hprDisplay(data.MaxDrawdown):.1f}%")
-    print(f"Продолжительная просадка {data.LongestDrawdown} дн.")
+    print(f"Максимальная просадка {hprDisplay(data.maxDrawdown):.1f}%")
+    print(f"Продолжительная просадка {data.longestDrawdown} дн.")
     print(
-        f"Текущая просадка {hprDisplay(data.CurrentDrawdown):.1f}% {data.CurrentDrawdownDays} дн.")
+        f"Текущая просадка {hprDisplay(data.currentDrawdown):.1f}% {data.currentDrawdownDays} дн.")
     print(
-        f"Дата максимума эквити {data.HighEquityDate.strftime(displayDateLayout)}")
+        f"Дата максимума эквити {data.highEquityDate.strftime(displayDateLayout)}")
 
 
 def hprDisplay(hpr: float) -> float:
     return (hpr-1.0)*100.0
+
+
+def lastDayOfMonth(d: datetime.date):
+    _, days = calendar.monthrange(d.year, d.month)
+    return datetime.date(d.year, d.month, days)
+
+
+def lastDayOfYear(d: datetime.date):
+    return datetime.date(d.year, 12, 31)

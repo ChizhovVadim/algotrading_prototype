@@ -1,17 +1,25 @@
-from .import sample
-from .import validation
-from .domaintypes import Advisor
+"""Торговые советники"""
+
+from . import indicators
 
 
-def buildAdvisor(name: str):
-    res = _makeAdvisor(name)
-    if res is None:
-        raise ValueError("bad advisor name", name)
-    return validation.applyCandleValidation(res)
+class AdvisorBuilder:
+    def __init__(self, name: str, stdVol: float):
+        self._name = name or "main"
+        self._stdVol = stdVol or 0.006
 
+    def build(self):
+        if self._name == "sample":
+            return self.sample()
 
-def _makeAdvisor(name: str):
-    if name.startswith("sample_"):
-        name = name.removeprefix("sample_")
-        return sample.buildAdvisor(name)
-    return None
+        raise ValueError("bad advisor name", self._name)
+
+    def sample(self):
+        volInd = indicators.Volatility(self._stdVol, 100)
+        ind = indicators.WeightSum([
+            indicators.BuyAndHold(),
+        ])
+        ind = indicators.EmaRebalance(volInd, ind, 1.0/25)
+        ind = indicators.VolatilityWrapper(volInd, ind)
+        ind = indicators.CandleValidator(ind)
+        return ind
