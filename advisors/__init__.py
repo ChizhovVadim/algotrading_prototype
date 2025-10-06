@@ -17,7 +17,8 @@ class AdvisorBuilder:
     def sample(self):
         volInd = indicators.Volatility(self._stdVol, 100)
         ind = indicators.WeightSum([
-            indicators.BuyAndHold(),
+            indicators.Turtle(3),
+            indicators.Turtle(6),
         ])
         ind = indicators.EmaRebalance(volInd, ind, 1.0/25)
         ind = indicators.VolatilityWrapper(volInd, ind)

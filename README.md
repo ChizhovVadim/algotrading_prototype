@@ -8,17 +8,16 @@
 ## advisors
 Советник рекомендует позицию в отрезке [-1;+1] от шорт "на все" до лонг "на все". Это позволяет гибко менять позицию. В качестве примера приводится простейшая стратегия (не рекомендуется для использования). Оснонвная идея строить стратегии из индикаторов как из кубиков:
 ```
-def momentumAdvisor():
-    ind = WeightSumIndicator(
-        [MomentumIndicator(1),
-         MomentumIndicator(2),
-         MomentumIndicator(5),
-         MomentumIndicator(10),
-         MomentumIndicator(20)],
-        [0.2, 0.2, 0.2, 0.2, 0.2])
-    ind = EmaIndicator(1.0/25, ind)
-    ind = CandleDecorator(ind)
-    return advisorFromIndicator(ind)
+    def sample(self):
+        volInd = indicators.Volatility(self._stdVol, 100)
+        ind = indicators.WeightSum([
+            indicators.Turtle(3),
+            indicators.Turtle(6),
+        ])
+        ind = indicators.EmaRebalance(volInd, ind, 1.0/25)
+        ind = indicators.VolatilityWrapper(volInd, ind)
+        ind = indicators.CandleValidator(ind)
+        return ind
 ```
 
 ## tests

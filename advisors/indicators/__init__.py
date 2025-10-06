@@ -1,4 +1,4 @@
-from .trends import BuyAndHold
+from .trends import BuyAndHold, Turtle
 from .weightsum import WeightSum
 from .direction import Direction
 from .volatility import Volatility, VolatilityWrapper
