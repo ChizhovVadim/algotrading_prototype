@@ -1,3 +1,7 @@
+"""
+Автоторговля торговых советников
+"""
+
 import threading
 import logging
 import os
@@ -26,30 +30,38 @@ def main():
 
 
 def configureTrader(trader: strategies.Trader):
-    trader._broker.add("paper", MockBroker("paper"))
-    marketData = trader._broker.get("paper")
+    brokerConfigs = [
+        {"key": "paper", "type": "mock"},
+        {"key": "vadim", "type": "quik", "port": 34128},
+    ]
+    portfolios = [
+        Portfolio(clientKey="paper", firm="", portfolio="test"),
+    ]
 
-    # TODO activeBrokers
-    # Чтобы проверить код без квика
-    if False:
-        trader._broker.add("myquik", QuikBroker(34128, trader._inbox))
-        marketData = trader._broker.get("myquik")
+    activeBrokers = {p.clientKey for p in portfolios}
+    marketData = None
+    for brokerConfig in brokerConfigs:
+        brokerKey = brokerConfig["key"]
+        if brokerKey not in activeBrokers:
+            continue
+        brokerType = brokerConfig["type"]
+        if brokerType == "mock":
+            broker = MockBroker(brokerKey)
+        elif brokerType == "quik":
+            broker = QuikBroker(brokerConfig["port"], trader._inbox)
+        else:
+            # кроме quik можно поддержать API finam/alor/T.
+            raise ValueError("bad BrokerConfig", brokerConfig)
+        trader._broker.add(brokerKey, broker)
+        if marketData is None:
+            logging.info(f"MarketData {brokerKey}")
+            marketData = broker
 
     signalServices = [
         configureSignal("CNY-12.25", "sample", 0.006, "minutes5",
                         strategies.SizeConfig(9, 9, 9, 0.6), marketData),
         configureSignal("Si-12.25", "sample", 0.006, "minutes5",
                         strategies.SizeConfig(9, 9, 6, 0.4), marketData),
-    ]
-    portfolios = [
-        Portfolio(
-            clientKey="paper",
-            firm="",
-            portfolio="test",
-            amountWeight=None,
-            amountUpper=None,
-            amountAvailable=None,
-        ),
     ]
     # Каждый сигнал торгуем в каждом портфеле
     strategyServices = [strategies.StrategyService(trader._broker, portfolio, signal._security, signal._name)

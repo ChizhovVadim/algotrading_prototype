@@ -42,12 +42,12 @@ class Security(NamedTuple):
 @dataclass
 class Portfolio:
     clientKey: str
-    "MultyTrader использует это поле для маршрутизации клиентов"
+    "MultyBroker использует это поле для маршрутизации клиентов"
     firm: str
     portfolio: str
-    amountWeight: float | None
-    amountUpper: float | None
-    amountAvailable: float | None
+    amountWeight: float | None = None
+    amountUpper: float | None = None
+    amountAvailable: float | None = None
 
 
 class Order(NamedTuple):
