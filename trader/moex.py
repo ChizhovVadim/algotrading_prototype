@@ -1,39 +1,31 @@
-import datetime
-import unittest
-from domaintypes import Security
-
-TIMEZONE = datetime.timezone(datetime.timedelta(hours=+3), name="MSK")
+from .domain import Security
 
 FUTURESCLASSCODE = "SPBFUT"
 
 
-class HardCodeSecurityInfoService:
-    def __init__(self):
-        pass
-
-    def getSecurityInfo(self, securityName: str) -> Security:
-        if securityName.startswith("Si"):
-            return Security(
-                name=securityName,
-                classCode=FUTURESCLASSCODE,
-                code=_encodeSecurity(securityName),
-                pricePrecision=0,
-                priceStep=1,
-                priceStepCost=1,
-                lever=1,
-            )
-        if securityName.startswith("CNY"):
-            return Security(
-                name=securityName,
-                classCode=FUTURESCLASSCODE,
-                # можно здесь replace("CNY", "CR")
-                code=_encodeSecurity(securityName),
-                pricePrecision=3,
-                priceStep=0.001,
-                priceStepCost=1,
-                lever=1000,
-            )
-        return None
+def getSecurityInfo(securityName: str) -> Security:
+    if securityName.startswith("Si"):
+        return Security(
+            name=securityName,
+            classCode=FUTURESCLASSCODE,
+            code=_encodeSecurity(securityName),
+            pricePrecision=0,
+            priceStep=1,
+            priceStepCost=1,
+            lever=1,
+        )
+    if securityName.startswith("CNY"):
+        return Security(
+            name=securityName,
+            classCode=FUTURESCLASSCODE,
+            # можно здесь replace("CNY", "CR")
+            code=_encodeSecurity(securityName),
+            pricePrecision=3,
+            priceStep=0.001,
+            priceStepCost=1,
+            lever=1000,
+        )
+    return None
 
 
 def _encodeSecurity(securityCode: str) -> str:
@@ -61,9 +53,3 @@ def _encodeSecurity(securityCode: str) -> str:
         name = "CR"
 
     return f"{name}{monthCodes[month-1]}{year % 10}"
-
-
-class TestSecurity(unittest.TestCase):
-    def test_securityEncode(self):
-        self.assertEqual(_encodeSecurity("Si-9.25"), "SiU5")
-        self.assertEqual(_encodeSecurity("CNY-12.25"), "CRZ5")

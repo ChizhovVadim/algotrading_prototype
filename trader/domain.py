@@ -1,8 +1,14 @@
-from typing import NamedTuple, Iterable, Any, Protocol
+from typing import NamedTuple, Protocol, Iterable
 from dataclasses import dataclass
-import abc
 import datetime
-import enum
+
+
+class ExitUserCmd:
+    pass
+
+
+class CheckStatusUserCmd:
+    pass
 
 
 class Candle(NamedTuple):
@@ -14,12 +20,6 @@ class Candle(NamedTuple):
     lowPrice: float
     closePrice: float
     volume: float
-
-
-class CandleInterval(enum.StrEnum):
-    MINUTES5 = "minutes5"
-    HOURLY = "hourly"
-    DAILY = "daily"
 
 
 class Security(NamedTuple):
@@ -37,15 +37,6 @@ class Security(NamedTuple):
     "Стоимость шага цены"
     lever: float
     "Плечо. Для фьючерсов = PriceStepCost/PriceStep."
-
-
-class Signal(NamedTuple):
-    advisor: str
-    security: Security
-    dateTime: datetime.datetime
-    price: float
-    position: float
-    details: Any
 
 
 @dataclass
@@ -77,11 +68,6 @@ class PortfolioLimits(NamedTuple):
     "Накопленная вариационная маржа с учётом премии по опционам и биржевым сборам"
 
 
-class SecurityInfoService(Protocol):
-    def getSecurityInfo(self, securityName: str) -> Security:
-        pass
-
-
 class MarketDataService(Protocol):
     def getLastCandles(self, security: Security, candleInterval: str) -> Iterable[Candle]:
         pass
@@ -93,7 +79,13 @@ class MarketDataService(Protocol):
         pass
 
 
-class Trader(Protocol):
+class Broker(Protocol):
+    def init(self):
+        pass
+
+    def checkStatus(self):
+        pass
+
     def getPortfolioLimits(self, portfolio: Portfolio) -> PortfolioLimits:
         pass
 
@@ -103,8 +95,5 @@ class Trader(Protocol):
     def registerOrder(self, order: Order):
         pass
 
-
-class SupportsClose(abc.ABC):
-    @abc.abstractmethod
     def close(self):
         pass

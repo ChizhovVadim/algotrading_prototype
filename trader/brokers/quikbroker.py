@@ -1,40 +1,47 @@
 import datetime
 import logging
-import queue
 
-import domaintypes
 from trader import moex
+from trader.domain import Portfolio, Security, Order, PortfolioLimits, Candle
 from .QuikPy import QuikPy
 
 
-class QuikTrader(domaintypes.SupportsClose):
+class QuikBroker:
 
-    def __init__(self, port: int, marketData: queue.Queue):
-        # Игорь Чечет https://github.com/cia76/QuikPy
-        # Есть также библиотеки для работы с finam, alor, T-invest: https://github.com/cia76?tab=repositories
-        self._quik = QuikPy(requests_port=port, callbacks_port=port+1)
+    def __init__(self, port: int, marketDataQueue):
+        self._port = port
+        self._marketDataQueue = marketDataQueue
 
-        start = datetime.datetime.now()
-        startCandles = start + datetime.timedelta(days=-1)
-
-        def onNewCandle(data):
-            candle = _parseQuikCandle(data["data"])
-            # чтобы очередь не переполнялась старыми барами
-            if candle.dateTime >= startCandles:
-                marketData.put(candle)
-
-        self._quik.OnNewCandle = onNewCandle
+        self._startCandles = datetime.datetime.now() + datetime.timedelta(days=-1)
+        self._quik = None
         self._transId = 1  # TODO init
 
+    def onNewCandle(self, data):
+        candle = _parseQuikCandle(data["data"])
+        # чтобы очередь не переполнялась старыми барами
+        if candle.dateTime >= self._startCandles:
+            self._marketDataQueue.put(candle)
+
+    def init(self):
+        # Игорь Чечет https://github.com/cia76/QuikPy
+        # Есть также библиотеки для работы с finam, alor, T-invest: https://github.com/cia76?tab=repositories
+        self._quik = QuikPy(requests_port=self._port,
+                            callbacks_port=self._port+1)
+        self._quik.OnNewCandle = self.onNewCandle
+
+    def checkStatus(self):
+        pass
+
     def close(self):
-        self._quik.CloseConnectionAndThread()
+        if self._quik is not None:
+            self._quik.CloseConnectionAndThread()
 
     def isConnected(self) -> bool:
         resp = self._quik.IsConnected()
         return resp["data"] == 1
 
-    def getLastCandles(self, security: domaintypes.Security,
-                       candleInterval: str) -> list[domaintypes.Candle]:
+    def getLastCandles(self, security: Security,
+                       candleInterval: str):
         # Если не указывать размер, то может прийти слишком много баров и unmarshal большой json
         MaxBars = 5_000
         new_bars = self._quik.GetCandlesFromDataSource(
@@ -45,20 +52,22 @@ class QuikTrader(domaintypes.SupportsClose):
             new_bars.pop()
         return new_bars
 
-    def subscribeCandles(self, security: domaintypes.Security, candleInterval: str):
+    def subscribeCandles(self, security: Security, candleInterval: str):
+        logging.debug(f"subscribeCandles {security.code} {candleInterval}")
         self._quik.SubscribeToCandles(
             security.classCode, security.code, _quikTimeframe(candleInterval))
-    
-    def getPortfolioLimits(self, portfolio: domaintypes.Portfolio) -> domaintypes.PortfolioLimits:
-        resp = self._quik.GetPortfolioInfoEx(portfolio.firm, portfolio.portfolio, 0)
+
+    def getPortfolioLimits(self, portfolio: Portfolio):
+        resp = self._quik.GetPortfolioInfoEx(
+            portfolio.firm, portfolio.portfolio, 0)
         start_limit_open_pos = float(resp["data"]["start_limit_open_pos"])
         used_lim_open_pos = float(resp["data"]["used_lim_open_pos"])
         varmargin = float(resp["data"]["varmargin"])
         fut_accured_int = float(resp["data"]["fut_accured_int"])
-        return domaintypes.PortfolioLimits(start_limit_open_pos, used_lim_open_pos, varmargin, fut_accured_int)
+        return PortfolioLimits(start_limit_open_pos, used_lim_open_pos, varmargin, fut_accured_int)
 
-    def getPosition(self, portfolio: domaintypes.Portfolio,
-                    security: domaintypes.Security) -> float:
+    def getPosition(self, portfolio: Portfolio,
+                    security: Security) -> float:
         if security.classCode == moex.FUTURESCLASSCODE:
             resp = self._quik.GetFuturesHolding(
                 portfolio.firm, portfolio.portfolio, security.code, 0)
@@ -70,7 +79,7 @@ class QuikTrader(domaintypes.SupportsClose):
 
         raise NotImplementedError()
 
-    def registerOrder(self, order: domaintypes.Order):
+    def registerOrder(self, order: Order):
         transaction = {  # Все значения должны передаваться в виде строк
             'ACTION': 'NEW_ORDER',
             'SECCODE': order.security.code,
@@ -97,7 +106,7 @@ def _quikTimeframe(candleInterval: str):
     raise ValueError("timeframe not supported", candleInterval)
 
 
-def _parseQuikDateTime(dt) -> datetime.datetime:
+def _parseQuikDateTime(dt):
     return datetime.datetime(
         int(dt["year"]),
         int(dt["month"]),
@@ -107,8 +116,8 @@ def _parseQuikDateTime(dt) -> datetime.datetime:
         int(dt["sec"]))
 
 
-def _parseQuikCandle(row) -> domaintypes.Candle:
-    return domaintypes.Candle(
+def _parseQuikCandle(row):
+    return Candle(
         interval="minutes5",  # TODO
         securityCode=row["sec"],
         dateTime=_parseQuikDateTime(row["datetime"]),
@@ -119,7 +128,7 @@ def _parseQuikCandle(row) -> domaintypes.Candle:
         volume=float(row["volume"]))
 
 
-def _formatPrice(price: float, pricePrecision: int, priceStep: float) -> str:
+def _formatPrice(price: float, pricePrecision: int, priceStep: float):
     if priceStep:
         price = round(price / priceStep) * priceStep
     return f"{price:.{pricePrecision}f}"
