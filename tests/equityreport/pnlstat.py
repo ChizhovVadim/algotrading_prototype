@@ -5,7 +5,7 @@ import statistics
 import math
 from typing import NamedTuple
 
-from .domain import DateSum
+from tests.domain import DateSum
 
 displayDateLayout = "%d.%m.%Y"
 

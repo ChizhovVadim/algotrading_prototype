@@ -1,7 +1,7 @@
 import math
 import statistics
 import functools
-from .domain import DateSum
+from tests.domain import DateSum
 
 
 def applyLever(hprs: list[DateSum], lever: float) -> list[DateSum]:

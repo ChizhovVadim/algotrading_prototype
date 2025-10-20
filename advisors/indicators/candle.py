@@ -7,9 +7,10 @@ class CandleValidator:
 
     def add(self, dt, v):
         if self._prevTime is not None and self._prevTime >= dt:
-            return
+            return False
         self._trendInd.add(dt, v)
         self._prevTime = dt
+        return True
 
     def value(self):
         return self._trendInd.value()

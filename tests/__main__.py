@@ -10,7 +10,7 @@ import time
 
 from historydata import CandleStorage
 from advisors import AdvisorBuilder
-from . import moex, pnlmulty, pnlstat, risk, calendar
+from . import advisorpnls, equityreport
 
 
 def mainHandler():
@@ -33,8 +33,8 @@ def mainHandler():
     if args.single:
         secCodes = [args.security]
     else:
-        secCodes = moex.quarterSecurityCodes(args.security,
-                                             moex.TimeRange(args.startyear, args.startquarter, args.finishyear, args.finishquarter))
+        secCodes = advisorpnls.quarterSecurityCodes(args.security,
+                                                    advisorpnls.TimeRange(args.startyear, args.startquarter, args.finishyear, args.finishquarter))
 
     candleStorage = CandleStorage.FromCandleInterval(
         os.path.expanduser("~/TradingData"), args.timeframe)
@@ -42,12 +42,13 @@ def mainHandler():
     indBuilder = AdvisorBuilder(args.advisor, None).build
 
     start = time.time()
-    pnls = pnlmulty.multiContractHprs(
-        indBuilder, candleStorage, secCodes, args.slippage, calendar.afterLongHoliday)
-    lever = args.lever or risk.optimalLever(pnls, risk.limitStdev(0.045))
-    pnls = risk.applyLever(pnls, lever)
+    pnls = advisorpnls.multiContractHprs(
+        indBuilder, candleStorage, secCodes, args.slippage, advisorpnls.afterLongHoliday)
+    lever = args.lever or equityreport.optimalLever(
+        pnls, equityreport.limitStdev(0.045))
+    pnls = equityreport.applyLever(pnls, lever)
     print(f"Плечо {lever:.1f}")
-    pnlstat.computeAndPrint(pnls)
+    equityreport.computeAndPrint(pnls)
     print(f"Elapsed: {(time.time()-start):.2f}")
 
 

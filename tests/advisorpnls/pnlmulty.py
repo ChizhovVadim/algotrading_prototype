@@ -1,6 +1,7 @@
 import itertools
 import multiprocessing
-from .domain import DateSum
+
+from tests.domain import DateSum
 from .pnl import singleContractHprs
 
 

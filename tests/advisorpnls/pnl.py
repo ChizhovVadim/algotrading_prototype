@@ -1,4 +1,4 @@
-from .domain import DateSum
+from tests.domain import DateSum
 from . import moex
 
 
@@ -24,7 +24,8 @@ def computeDailyPnls2(candles, ind, slippage: float, skipPnl):
     baseCandle = None
     prevCandle = None
     for candle in candles:
-        ind.add(candle.dateTime, candle.closePrice)
+        if not ind.add(candle.dateTime, candle.closePrice):
+            continue
         # Для совершения сделок робот включен только в основную сессию
         if not moex.isMainFortsSession(candle.dateTime):
             continue
