@@ -10,9 +10,8 @@ import datetime
 from advisors import AdvisorBuilder
 from historydata import CandleStorage
 from .brokers.mockbroker import MockBroker
-from .brokers.quikbroker import QuikBroker
-from .domain import MarketDataService, Portfolio
-from . import usercommands, moex, strategies
+from .domain import MarketDataService
+from . import usercommands, moex, strategies, settings
 
 
 def main():
@@ -30,39 +29,23 @@ def main():
 
 
 def configureTrader(trader: strategies.Trader):
-    brokerConfigs = [
-        {"key": "paper", "type": "mock"},
-        {"key": "vadim", "type": "quik", "port": 34128},
-    ]
-    portfolios = [
-        Portfolio(clientKey="paper", firm="", portfolio="test"),
-    ]
-
+    portfolios = settings.portfolios
     activeBrokers = {p.clientKey for p in portfolios}
+
     marketData = None
-    for brokerConfig in brokerConfigs:
+    for brokerConfig in settings.brokerConfigs:
         brokerKey = brokerConfig["key"]
         if brokerKey not in activeBrokers:
             continue
-        brokerType = brokerConfig["type"]
-        if brokerType == "mock":
-            broker = MockBroker(brokerKey)
-        elif brokerType == "quik":
-            broker = QuikBroker(brokerConfig["port"], trader._inbox)
-        else:
-            # кроме quik можно поддержать API finam/alor/T.
-            raise ValueError("bad BrokerConfig", brokerConfig)
+        broker = buildBroker(trader._inbox, **brokerConfig)
         trader._broker.add(brokerKey, broker)
         if marketData is None:
             logging.info(f"MarketData {brokerKey}")
             marketData = broker
 
-    signalServices = [
-        configureSignal("CNY-12.25", "sample", 0.006, "minutes5",
-                        strategies.SizeConfig(9, 9, 9, 0.6), marketData),
-        configureSignal("Si-12.25", "sample", 0.006, "minutes5",
-                        strategies.SizeConfig(9, 9, 6, 0.4), marketData),
-    ]
+    signalServices = [buildSignal(
+        marketData, **signalConfig) for signalConfig in settings.signalConfigs]
+
     # Каждый сигнал торгуем в каждом портфеле
     strategyServices = [strategies.StrategyService(trader._broker, portfolio, signal._security, signal._name)
                         for signal in signalServices
@@ -73,21 +56,33 @@ def configureTrader(trader: strategies.Trader):
     trader._strategyManager._strategies.extend(strategyServices)
 
 
-def configureSignal(secName: str, signalName: str, stdVol: float, candleInterval: str, sizeConfig: strategies.SizeConfig, marketData: MarketDataService):
-    sec = moex.getSecurityInfo(secName)
-    ind = AdvisorBuilder(signalName, stdVol).build()
+def buildBroker(marketDataQueue, key, type, **kwargs):
+    if type == "mock":
+        return MockBroker(key)
+    elif type == "quik":
+        from .brokers.quikbroker import QuikBroker
+        return QuikBroker(kwargs["port"], marketDataQueue)
+    else:
+        # кроме quik можно поддержать API finam/alor/T.
+        raise ValueError("bad broker type", type)
+
+
+def buildSignal(marketData: MarketDataService,
+                security: str, name: str, stdVol: float, candleInterval: str, sizeConfig: strategies.SizeConfig):
+    sec = moex.getSecurityInfo(security)
+    ind = AdvisorBuilder(name, stdVol).build()
     signalService = strategies.SignalService(
-        marketData, signalName, ind, sec, candleInterval, sizeConfig)
+        marketData, name, ind, sec, candleInterval, sizeConfig)
     candleStorage = CandleStorage.FromCandleInterval(
-        os.path.expanduser("~/TradingData"), candleInterval)
-    signalService.applyHistoryCandles(candleStorage.read(secName))
+        settings.candleFolder, candleInterval)
+    signalService.applyHistoryCandles(candleStorage.read(security))
     return signalService
 
 
 def initLogger():
     today = datetime.date.today()
     logPath = os.path.join(
-        os.path.expanduser("~/TradingData/Logs/luatrader/python"),
+        settings.logFolder,
         f"{today.strftime('%Y-%m-%d')}.txt")
     consoleHandler = logging.StreamHandler()
     consoleHandler.setLevel(logging.INFO)
