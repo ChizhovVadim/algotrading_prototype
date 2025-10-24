@@ -9,15 +9,16 @@ import datetime
 
 from advisors import AdvisorBuilder
 from historydata import CandleStorage
-from .brokers.mockbroker import MockBroker
-from .domain import MarketDataService
-from . import usercommands, moex, strategies, settings
+from . import brokers, usercommands, moex, strategies, settings
+from .trader import Trader
+from .strategies.signal import SignalService
+from .strategies.strategy import StrategyService
 
 
 def main():
     initLogger()
     logging.info("Application started.")
-    trader = strategies.Trader()
+    trader = Trader()
     try:
         configureTrader(trader)
         usercmd_thread = threading.Thread(
@@ -28,26 +29,26 @@ def main():
         trader.close()
 
 
-def configureTrader(trader: strategies.Trader):
+def configureTrader(trader: Trader):
     portfolios = settings.portfolios
     activeBrokers = {p.clientKey for p in portfolios}
+    if settings.marketData:
+        activeBrokers.add(settings.marketData)
 
-    marketData = None
     for brokerConfig in settings.brokerConfigs:
         brokerKey = brokerConfig["key"]
         if brokerKey not in activeBrokers:
             continue
-        broker = buildBroker(trader._inbox, **brokerConfig)
+        broker = brokers.build(trader._inbox, **brokerConfig)
         trader._broker.add(brokerKey, broker)
-        if marketData is None:
-            logging.info(f"MarketData {brokerKey}")
-            marketData = broker
+
+    marketData = trader._broker.get(settings.marketData)
 
     signalServices = [buildSignal(
         marketData, **signalConfig) for signalConfig in settings.signalConfigs]
 
     # Каждый сигнал торгуем в каждом портфеле
-    strategyServices = [strategies.StrategyService(trader._broker, portfolio, signal._security, signal._name)
+    strategyServices = [StrategyService(trader._broker, portfolio, signal._security, signal._name)
                         for signal in signalServices
                         for portfolio in portfolios]
 
@@ -56,22 +57,11 @@ def configureTrader(trader: strategies.Trader):
     trader._strategyManager._strategies.extend(strategyServices)
 
 
-def buildBroker(marketDataQueue, key, type, **kwargs):
-    if type == "mock":
-        return MockBroker(key)
-    elif type == "quik":
-        from .brokers.quikbroker import QuikBroker
-        return QuikBroker(kwargs["port"], marketDataQueue)
-    else:
-        # кроме quik можно поддержать API finam/alor/T.
-        raise ValueError("bad broker type", type)
-
-
-def buildSignal(marketData: MarketDataService,
-                security: str, name: str, stdVol: float, candleInterval: str, sizeConfig: strategies.SizeConfig):
+def buildSignal(marketData,
+                security: str, name: str, stdVol: float, candleInterval: str, sizeConfig):
     sec = moex.getSecurityInfo(security)
     ind = AdvisorBuilder(name, stdVol).build()
-    signalService = strategies.SignalService(
+    signalService = SignalService(
         marketData, name, ind, sec, candleInterval, sizeConfig)
     candleStorage = CandleStorage.FromCandleInterval(
         settings.candleFolder, candleInterval)

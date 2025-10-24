@@ -1,4 +1,4 @@
-from .domain import Security
+from .brokers.domain import Security
 
 FUTURESCLASSCODE = "SPBFUT"
 

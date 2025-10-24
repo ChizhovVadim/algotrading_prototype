@@ -1,4 +1,10 @@
-from .domain import ExitUserCmd, CheckStatusUserCmd
+
+class ExitUserCmd:
+    pass
+
+
+class CheckStatusUserCmd:
+    pass
 
 # потом можно прикрутить, чтобы команды не только из консоли, но например из телеграм бота.
 

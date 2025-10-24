@@ -1,6 +1,6 @@
 import logging
 
-from trader.domain import Portfolio, Security, Order, PortfolioLimits
+from .domain import Portfolio, Security, Order, PortfolioLimits
 
 
 class MockBroker:

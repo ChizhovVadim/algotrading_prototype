@@ -1,4 +1,4 @@
-from trader.domain import Broker, Portfolio, Security, Order, PortfolioLimits
+from .domain import Broker, Portfolio, Security, Order, PortfolioLimits
 
 
 class MultyBroker:

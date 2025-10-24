@@ -1,7 +1,7 @@
 import os
 
-from .domain import Portfolio
-from .strategies import SizeConfig
+from .strategies.domain import Portfolio
+from .strategies.signal import SizeConfig
 
 logFolder = os.path.expanduser("~/TradingData/Logs/luatrader/python")
 candleFolder = os.path.expanduser("~/TradingData")
@@ -20,6 +20,8 @@ signalConfigs = [
      "sizeConfig": SizeConfig(longLever=9, shortLever=9, maxLever=6, weight=0.4),
      },
 ]
+
+marketData = "paper"
 
 portfolios = [
     Portfolio(clientKey="paper", firm="", portfolio="test"),

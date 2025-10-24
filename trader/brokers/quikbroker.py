@@ -2,8 +2,8 @@ import datetime
 import logging
 
 from trader import moex
-from trader.domain import Portfolio, Security, Order, PortfolioLimits, Candle
-from .QuikPy import QuikPy
+from trader.connectors.QuikPy import QuikPy
+from .domain import Portfolio, Security, Order, PortfolioLimits, Candle
 
 
 class QuikBroker:

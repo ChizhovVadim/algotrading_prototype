@@ -1,11 +1,12 @@
 import queue
 import logging
 
-from trader.domain import Candle, ExitUserCmd, CheckStatusUserCmd
-from trader.brokers.multybroker import MultyBroker
-from .signalmanager import SignalManager
-from .strategymanager import StrategyManager
-from .portfoliomanager import PortfolioManager
+from .brokers.domain import Candle
+from .import usercommands
+from .brokers.multybroker import MultyBroker
+from .strategies.signalmanager import SignalManager
+from .strategies.strategymanager import StrategyManager
+from .strategies.portfoliomanager import PortfolioManager
 
 
 class Trader:
@@ -33,15 +34,15 @@ class Trader:
                 self._shouldCheckStatus = True
 
     def run(self):
+        logging.info("Strategies starting...")
         self._broker.init()
         self._portfolioManager.init()
         self._strategyManager.init()
-        self.checkStatus()
-        logging.info("Strategies started.")
-        # Подписываемся как можно позже перед чтением. Можно даже в отдельном потоке.
         self._signalManager.init()
+        logging.info("Strategies started.")
 
         # находимся в главном потоке и здесь уже код потокобезопасный
+        self._shouldCheckStatus = True
         while True:
             timeout = 10.0 if self._shouldCheckStatus else None
             try:
@@ -54,7 +55,7 @@ class Trader:
 
             if isinstance(message, Candle):
                 self.onCandle(message)
-            elif isinstance(message, ExitUserCmd):
+            elif isinstance(message, usercommands.ExitUserCmd):
                 return
-            elif isinstance(message, CheckStatusUserCmd):
+            elif isinstance(message, usercommands.CheckStatusUserCmd):
                 self.checkStatus()

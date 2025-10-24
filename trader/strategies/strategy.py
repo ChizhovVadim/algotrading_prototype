@@ -1,7 +1,8 @@
 import datetime
 import logging
 
-from trader.domain import Broker, Portfolio, Security, Order
+from trader.brokers.domain import Broker, Security, Order
+from .domain import Portfolio
 from .signal import Signal
 
 

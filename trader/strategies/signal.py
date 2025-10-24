@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import NamedTuple
 
-from trader.domain import Candle, Security, MarketDataService
+from trader.brokers.domain import Candle, Security, MarketDataService
 
 
 class SizeConfig(NamedTuple):
@@ -43,6 +43,7 @@ class SignalService:
     def init(self):
         self.applyHistoryCandles(self._marketData.getLastCandles(
             self._security, self._candleInterval))
+        # Подписываться можно даже в отдельном потоке.
         self._marketData.subscribeCandles(self._security, self._candleInterval)
 
     def checkStatus(self):
@@ -88,12 +89,11 @@ class SignalService:
         if not (candle.securityCode == self._security.code
                 and candle.interval == self._candleInterval):
             return None
-        if not self._ind(candle.dateTime, candle.closePrice):
+        if not self._ind.add(candle.dateTime, candle.closePrice):
             return None
 
         freshCandle = candle.dateTime >= self._start
 
-        # должен быть свежий бар, main forts session?
         if self._baseCandle is None and freshCandle:
             self._baseCandle = candle
             logging.debug(

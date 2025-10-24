@@ -3,14 +3,6 @@ from dataclasses import dataclass
 import datetime
 
 
-class ExitUserCmd:
-    pass
-
-
-class CheckStatusUserCmd:
-    pass
-
-
 class Candle(NamedTuple):
     interval: str
     securityCode: str
@@ -45,9 +37,6 @@ class Portfolio:
     "MultyBroker использует это поле для маршрутизации клиентов"
     firm: str
     portfolio: str
-    amountWeight: float | None = None
-    amountUpper: float | None = None
-    amountAvailable: float | None = None
 
 
 class Order(NamedTuple):
