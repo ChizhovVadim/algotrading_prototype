@@ -20,7 +20,7 @@ class StrategyService:
     def init(self):
         self._plannedPosition = self.brokerPosition()
         logging.info(
-            f"Init position {self._portfolio.clientKey} {self._portfolio.portfolio} {self._security.name} {self._plannedPosition}")
+            f"Init strategy {self._portfolio.clientKey} {self._portfolio.portfolio} {self._security.name} {self._plannedPosition}")
 
     def checkStatus(self):
         try:

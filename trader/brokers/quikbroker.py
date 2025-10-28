@@ -28,6 +28,7 @@ class QuikBroker:
         self._quik = QuikPy(requests_port=self._port,
                             callbacks_port=self._port+1)
         self._quik.OnNewCandle = self.onNewCandle
+        logging.info("Init broker quik")
 
     def checkStatus(self):
         pass
@@ -73,7 +74,7 @@ class QuikBroker:
                 portfolio.firm, portfolio.portfolio, security.code, 0)
             data = resp.get("data")
             if data is None:
-                logging.warning(f"Position {security.name} empty.")
+                logging.debug(f"Position {security.name} empty.")
                 return 0.0
             return float(data["totalnet"])
 

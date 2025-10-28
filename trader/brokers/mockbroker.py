@@ -9,7 +9,7 @@ class MockBroker:
         self._positions = dict()
 
     def init(self):
-        pass
+        logging.info(f"Init broker mock {self._name}")
 
     def checkStatus(self):
         pass

@@ -3,7 +3,7 @@ import datetime
 
 
 class Candle(NamedTuple):
-    securityCode: str
+    securityCode: str # delete?
     dateTime: datetime.datetime
     openPrice: float
     highPrice: float

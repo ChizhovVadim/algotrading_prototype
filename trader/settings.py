@@ -5,6 +5,7 @@ from .strategies.signal import SizeConfig
 
 logFolder = os.path.expanduser("~/TradingData/Logs/luatrader/python")
 candleFolder = os.path.expanduser("~/TradingData")
+useCandleStorage = True
 
 signalConfigs = [
     {"security": "CNY-12.25",

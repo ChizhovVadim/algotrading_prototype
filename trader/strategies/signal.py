@@ -43,6 +43,7 @@ class SignalService:
     def init(self):
         self.applyHistoryCandles(self._marketData.getLastCandles(
             self._security, self._candleInterval))
+        logging.info(f"Init signal {self._lastSignal}")
         # Подписываться можно даже в отдельном потоке.
         self._marketData.subscribeCandles(self._security, self._candleInterval)
 
@@ -82,12 +83,11 @@ class SignalService:
             prediction=self._ind.value(),
             contractsPerAmount=None,
             deadline=None)
-        logging.info(f"Init signal {self._lastSignal}")
 
     def onCandle(self, candle: Candle):
         # следим только за своими барами
-        if not (candle.securityCode == self._security.code
-                and candle.interval == self._candleInterval):
+        if not (candle.securityCode == self._security.code):
+            # TODO and candle.interval == self._candleInterval):
             return None
         if not self._ind.add(candle.dateTime, candle.closePrice):
             return None
@@ -104,8 +104,7 @@ class SignalService:
             deadline = None
             contractsPerAmount = None
         else:
-            deadline = candle.dateTime + \
-                datetime.timedelta(minutes=9)
+            deadline = candle.dateTime + datetime.timedelta(minutes=9)
             contractsPerAmount = applySizeConfig(
                 prediction, self._sizeConfig) / (self._baseCandle.closePrice * self._security.lever)
 

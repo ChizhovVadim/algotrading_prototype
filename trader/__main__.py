@@ -9,10 +9,10 @@ import datetime
 
 from advisors import AdvisorBuilder
 from historydata import CandleStorage
-from . import brokers, usercommands, moex, strategies, settings
-from .trader import Trader
+from . import brokers, usercommands, moex, settings
+from .strategies.trader import Trader
 from .strategies.signal import SignalService
-from .strategies.strategy import StrategyService
+from .strategies.portfolio import PortfolioService
 
 
 def main():
@@ -46,15 +46,14 @@ def configureTrader(trader: Trader):
 
     signalServices = [buildSignal(
         marketData, **signalConfig) for signalConfig in settings.signalConfigs]
+    trader._signals.extend(signalServices)
+
+    portfolioServices = [PortfolioService(
+        trader._broker, p) for p in portfolios]
+    trader._portfolios.extend(portfolioServices)
 
     # Каждый сигнал торгуем в каждом портфеле
-    strategyServices = [StrategyService(trader._broker, portfolio, signal._security, signal._name)
-                        for signal in signalServices
-                        for portfolio in portfolios]
-
-    trader._signalManager._signals.extend(signalServices)
-    trader._portfolioManager._portfolios.extend(portfolios)
-    trader._strategyManager._strategies.extend(strategyServices)
+    trader.addStrategiesForAllSignalPortfolioPairs()
 
 
 def buildSignal(marketData,
@@ -63,9 +62,10 @@ def buildSignal(marketData,
     ind = AdvisorBuilder(name, stdVol).build()
     signalService = SignalService(
         marketData, name, ind, sec, candleInterval, sizeConfig)
-    candleStorage = CandleStorage.FromCandleInterval(
-        settings.candleFolder, candleInterval)
-    signalService.applyHistoryCandles(candleStorage.read(security))
+    if settings.useCandleStorage:
+        candleStorage = CandleStorage.FromCandleInterval(
+            settings.candleFolder, candleInterval)
+        signalService.applyHistoryCandles(candleStorage.read(security))
     return signalService
 
 
