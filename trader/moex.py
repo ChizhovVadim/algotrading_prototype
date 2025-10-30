@@ -1,6 +1,9 @@
+import datetime
 from .brokers.domain import Security
 
 FUTURESCLASSCODE = "SPBFUT"
+
+TIMEZONE = datetime.timezone(datetime.timedelta(hours=+3), name="MSK")
 
 
 def getSecurityInfo(securityName: str) -> Security:

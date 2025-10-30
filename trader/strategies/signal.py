@@ -65,24 +65,25 @@ class SignalService:
         first = None
         last = None
         for candle in candles:
-            if not self._ind.add(candle.dateTime, candle.closePrice):
-                continue
             size += 1
             if first is None:
                 first = candle
             last = candle
+
+            if self._ind.add(candle.dateTime, candle.closePrice):
+                self._lastSignal = Signal(
+                    name=self._name,
+                    securityCode=self._security.code,
+                    dateTime=candle.dateTime,
+                    price=candle.closePrice,
+                    prediction=self._ind.value(),
+                    contractsPerAmount=None,
+                    deadline=None)
+
         if size == 0:
             logging.warning("History candles empty")
-            return
-        logging.debug(f"History candles {size} {first} {last}")
-        self._lastSignal = Signal(
-            name=self._name,
-            securityCode=self._security.code,
-            dateTime=last.dateTime,
-            price=last.closePrice,
-            prediction=self._ind.value(),
-            contractsPerAmount=None,
-            deadline=None)
+        else:
+            logging.debug(f"History candles {size} {first} {last}")
 
     def onCandle(self, candle: Candle):
         # следим только за своими барами

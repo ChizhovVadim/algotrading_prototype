@@ -12,7 +12,11 @@ class MockBroker:
         logging.info(f"Init broker mock {self._name}")
 
     def checkStatus(self):
-        pass
+        status = {
+            "type": "mock",
+            "name": self._name,
+        }
+        print(status)
 
     def getPortfolioLimits(self, portfolio) -> PortfolioLimits:
         return PortfolioLimits(1_000_000, 0, 0, 0)
