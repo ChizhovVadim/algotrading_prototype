@@ -8,7 +8,7 @@ import argparse
 import datetime
 import time
 
-from historydata import CandleStorage
+from historydata import CandleStorage, CandleInterval
 from advisors import AdvisorBuilder
 from . import advisorpnls, equityreport
 
@@ -19,7 +19,7 @@ def mainHandler():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--advisor', type=str, default="main")
-    parser.add_argument('--timeframe', type=str, default="minutes5")
+    parser.add_argument('--timeframe', type=str, default=CandleInterval.Minutes5)
     parser.add_argument('--security', type=str, default="Si")
     parser.add_argument('--lever', type=float)
     parser.add_argument('--slippage', type=float, default=0.03 * 0.01)

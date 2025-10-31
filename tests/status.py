@@ -2,7 +2,7 @@ import argparse
 import os
 import collections
 
-from historydata import CandleStorage
+from historydata import CandleStorage, CandleInterval
 from advisors import AdvisorBuilder
 
 
@@ -25,7 +25,7 @@ def statusHandler():
     "Текущая позиция торговой системы."
     parser = argparse.ArgumentParser()
     parser.add_argument('--advisor', type=str, default="main")
-    parser.add_argument('--timeframe', type=str, default="minutes5")
+    parser.add_argument('--timeframe', type=str, default=CandleInterval.Minutes5)
     parser.add_argument('--security', type=str, required=True)
     parser.add_argument('--count', type=int, default=1)
     args = parser.parse_args()
