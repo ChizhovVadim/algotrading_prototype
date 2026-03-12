@@ -45,7 +45,8 @@ class SignalService:
         self.applyHistoryCandles(self._marketData.getLastCandles(
             self._security, self._candleInterval))
         logging.info(f"Init signal {self._lastSignal}")
-        # Подписываться можно даже в отдельном потоке.
+
+    def subscribe(self):
         self._marketData.subscribeCandles(self._security, self._candleInterval)
 
     def checkStatus(self):

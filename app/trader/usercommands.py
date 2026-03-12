@@ -1,7 +1,12 @@
-from domain.model.trader import CheckStatusUserCmd, ExitUserCmd
+class ExitUserCmd:
+    pass
 
 
-def read(queue):
+class CheckStatusUserCmd:
+    pass
+
+
+def readUserCommands(queue):
     "потом можно прикрутить, чтобы команды не только из консоли, но например из телеграм бота."
 
     while True:

@@ -1,25 +1,16 @@
-import queue
 import logging
 
 from domain.model.candle import Candle
-from domain.model.trader import ExitUserCmd, CheckStatusUserCmd
-from .multybroker import MultyBroker
 from .signal import SignalService
 from .strategy import StrategyService
 from .portfolio import PortfolioService
 
 
-class Trader:
+class StrategyManager:
     def __init__(self):
-        self._inbox = queue.Queue()
-        self._broker = MultyBroker()
         self._signals: list[SignalService] = []
         self._portfolios: list[PortfolioService] = []
         self._strategies: list[StrategyService] = []
-        self._shouldCheckStatus = False
-
-    def close(self):
-        self._broker.close()
 
     def addStrategiesForAllSignalPortfolioPairs(self):
         for signal in self._signals:
@@ -29,7 +20,6 @@ class Trader:
 
     def init(self):
         logging.info("Strategies starting...")
-        self._broker.init()
         for portfolio in self._portfolios:
             portfolio.init()
         for strategy in self._strategies:
@@ -38,9 +28,11 @@ class Trader:
             signal.init()
         logging.info("Strategies started.")
 
-    def checkStatus(self):
-        self._broker.checkStatus()
+    def subscribe(self):
+        for signal in self._signals:
+            signal.subscribe()
 
+    def checkStatus(self):
         for signal in self._signals:
             signal.checkStatus()
         print(f"Total signals: {len(self._signals)}")
@@ -53,33 +45,13 @@ class Trader:
             strategy.checkStatus()
         print(f"Total strategies: {len(self._strategies)}")
 
-    def onCandle(self, candle):
+    def onCandle(self, candle: Candle) -> bool:
+        orderRegistered = False
         for signal in self._signals:
             s = signal.onCandle(candle)
             if s is None:
                 continue
             for strategy in self._strategies:
                 if strategy.onSignal(s):
-                    self._shouldCheckStatus = True
-
-    def run(self):
-        self.init()
-
-        # находимся в главном потоке и здесь уже код потокобезопасный
-        self._shouldCheckStatus = True
-        while True:
-            timeout = 10.0 if self._shouldCheckStatus else None
-            try:
-                message = self._inbox.get(timeout=timeout)
-            except queue.Empty:
-                if self._shouldCheckStatus:
-                    self._shouldCheckStatus = False
-                    self.checkStatus()
-                continue
-
-            if isinstance(message, Candle):
-                self.onCandle(message)
-            elif isinstance(message, ExitUserCmd):
-                return
-            elif isinstance(message, CheckStatusUserCmd):
-                self.checkStatus()
+                    orderRegistered = True
+        return orderRegistered
