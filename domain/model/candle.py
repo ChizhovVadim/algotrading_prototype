@@ -11,7 +11,7 @@ class CandleInterval(StrEnum):
 
 
 class Candle(NamedTuple):
-    # interval: str
+    # TODO interval: str
     securityCode: str
     dateTime: datetime.datetime
     openPrice: float

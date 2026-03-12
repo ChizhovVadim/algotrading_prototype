@@ -5,8 +5,8 @@ from infra.candlestorage import CandleStorage
 from infra.mockbroker import MockBroker
 from infra import moex
 from domain.model.candle import Candle, CandleInterval
+from domain.model.broker import Portfolio
 from domain.strategymanager import (
-    Portfolio,
     PortfolioService,
     SignalService,
     SizeConfig,
@@ -61,7 +61,7 @@ def configure(trader: TraderApp):
 
     # portfolios
     trader._strategyManager._portfolios.append(
-        PortfolioService(trader._broker, Portfolio("paper", "", "test"))
+        PortfolioService(trader._broker, Portfolio("paper", "", "test"), None, None)
     )
 
     # strategies

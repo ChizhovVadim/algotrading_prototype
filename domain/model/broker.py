@@ -1,5 +1,4 @@
 from typing import NamedTuple, Protocol, Iterable
-from dataclasses import dataclass
 
 
 from .candle import Candle, CandleInterval
@@ -22,8 +21,7 @@ class Security(NamedTuple):
     "Плечо. Для фьючерсов = PriceStepCost/PriceStep."
 
 
-@dataclass
-class Portfolio:
+class Portfolio(NamedTuple):
     clientKey: str
     "MultyBroker использует это поле для маршрутизации клиентов"
     firm: str

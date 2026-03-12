@@ -1,31 +1,29 @@
 import logging
-from dataclasses import dataclass
 
-import domain.model.broker
-from domain.model.broker import Broker
-
-@dataclass
-class Portfolio(domain.model.broker.Portfolio):
-    amountWeight: float | None = None
-    amountUpper: float | None = None
-    amountAvailable: float | None = None
+from domain.model.broker import Portfolio, Broker
 
 
 class PortfolioService:
-    def __init__(self, broker: Broker, portfolio: Portfolio):
+    def __init__(self, broker: Broker, portfolio: Portfolio, amountWeight: float|None, amountUpper: float|None):
         self._broker = broker
         self._portfolio = portfolio
+        self._amountWeight = amountWeight
+        self._amountUpper = amountUpper
+        self._amountAvailable : float | None = None
 
     def init(self):
         limits = self._broker.getPortfolioLimits(self._portfolio)
         availableAmount = limits.startLimitOpenPos
-        if self._portfolio.amountWeight is not None:
-            availableAmount *= self._portfolio.amountWeight
-        if self._portfolio.amountUpper is not None:
-            availableAmount = min(availableAmount, self._portfolio.amountUpper)
+        if self._amountWeight is not None:
+            availableAmount *= self._amountWeight
+        if self._amountUpper is not None:
+            availableAmount = min(availableAmount, self._amountUpper)
         logging.info(
             f"Init portfolio {self._portfolio.clientKey} {self._portfolio.portfolio} {limits.startLimitOpenPos} {availableAmount}")
-        self._portfolio.amountAvailable = availableAmount
+        self._amountAvailable = availableAmount
+
+    def getAmountAvailable(self):
+        return self._amountAvailable
 
     def checkStatus(self):
         limits = self._broker.getPortfolioLimits(self._portfolio)
@@ -41,7 +39,7 @@ class PortfolioService:
             "Client": self._portfolio.clientKey,
             "Portfolio": self._portfolio.portfolio,
             "startLimitOpenPos": limits.startLimitOpenPos,
-            "amountAvailable": self._portfolio.amountAvailable,
+            "amountAvailable": self._amountAvailable,
             "varMargin": varMargin,
             "varMarginRatio": varMarginRatio,
             "usedRatio": usedRatio,

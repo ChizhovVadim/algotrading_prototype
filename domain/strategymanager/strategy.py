@@ -2,15 +2,17 @@ import datetime
 import logging
 
 from domain.model.broker import Broker, Security, Order, Portfolio
-from .signal import Signal
+from .signal import Signal, SignalService
+from .portfolio import PortfolioService
 
 
 class StrategyService:
-    def __init__(self, broker: Broker, portfolio: Portfolio, security: Security, signalName: str):
-        self._broker = broker
-        self._portfolio = portfolio
-        self._security = security
-        self._signalName = signalName
+    def __init__(self, signalService: SignalService, portfolioService: PortfolioService):
+        self._portfolioService = portfolioService
+        self._broker = portfolioService._broker
+        self._portfolio = portfolioService._portfolio
+        self._security = signalService._security
+        self._signalName = signalService._name
         self._plannedPosition: int | None = None
 
     def brokerPosition(self):
@@ -38,7 +40,7 @@ class StrategyService:
 
     def onSignal(self, signal: Signal):
         # следим только за своими сигналами
-        if not (self._security.code == signal.securityCode and
+        if not (self._security.code == signal.security.code and
                 self._signalName == signal.name):
             return False
 
@@ -48,11 +50,12 @@ class StrategyService:
 
         if signal.contractsPerAmount is None:
             return False
-
-        if self._portfolio.amountAvailable is None:
+        
+        amountAvailable = self._portfolioService.getAmountAvailable()
+        if amountAvailable is None:
             return False
 
-        idealPos = signal.contractsPerAmount * self._portfolio.amountAvailable
+        idealPos = signal.contractsPerAmount * amountAvailable
         return self.rebalance(signal.price, idealPos)
 
     def rebalance(self, price: float, idealPos: float):

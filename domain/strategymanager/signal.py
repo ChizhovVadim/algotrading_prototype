@@ -15,7 +15,7 @@ class SizeConfig(NamedTuple):
 
 class Signal(NamedTuple):
     name: str
-    securityCode: str
+    security: Security
     dateTime: datetime.datetime
     price: float
     prediction: float
@@ -75,7 +75,7 @@ class SignalService:
             if self._ind.add(candle.dateTime, candle.closePrice):
                 self._lastSignal = Signal(
                     name=self._name,
-                    securityCode=self._security.code,
+                    security=self._security,
                     dateTime=candle.dateTime,
                     price=candle.closePrice,
                     prediction=self._ind.value(),
@@ -113,7 +113,7 @@ class SignalService:
 
         self._lastSignal = Signal(
             name=self._name,
-            securityCode=self._security.code,
+            security=self._security,
             dateTime=candle.dateTime,
             price=candle.closePrice,
             prediction=prediction,

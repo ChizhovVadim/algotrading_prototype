@@ -15,8 +15,7 @@ class StrategyManager:
     def addStrategiesForAllSignalPortfolioPairs(self):
         for signal in self._signals:
             for portfolio in self._portfolios:
-                self._strategies.append(StrategyService(
-                    portfolio._broker, portfolio._portfolio, signal._security, signal._name))
+                self._strategies.append(StrategyService(signal, portfolio))
 
     def init(self):
         logging.info("Strategies starting...")

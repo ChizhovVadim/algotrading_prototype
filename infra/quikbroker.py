@@ -124,7 +124,7 @@ def _parseQuikDateTime(dt):
 
 def _parseQuikCandle(row):
     return Candle(
-        interval="minutes5",  # TODO
+        #TODO interval="minutes5",
         securityCode=row["sec"],
         dateTime=_parseQuikDateTime(row["datetime"]),
         openPrice=float(row["open"]),
