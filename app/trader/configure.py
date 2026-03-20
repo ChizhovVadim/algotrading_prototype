@@ -2,15 +2,12 @@ import logging
 
 import settings
 from infra.candlestorage import CandleStorage
-from infra.mockbroker import MockBroker
 from infra import moex
+from domain.trading.mockbroker import MockBroker
+from domain.trading.signal import SignalService
+from domain.trading.strategy import StrategyService, SizePolicy
 from domain.model.candle import Candle, CandleInterval
 from domain.model.broker import Portfolio
-from domain.strategymanager import (
-    PortfolioService,
-    SignalService,
-    SizeConfig,
-)
 from domain.advisor import AdvisorBuilder
 from .traderapp import TraderApp
 
@@ -30,58 +27,59 @@ def configure(trader: TraderApp):
         marketData = trader._broker.get("quik")
 
     candleInterval = CandleInterval.Minutes5
-
     candleStorage = CandleStorage.FromCandleInterval(
         settings.candleFolder, candleInterval
     )
 
-    # signals
-    trader._strategyManager._signals.append(
-        buildSignal(
-            candleStorage,
+    signalConfigs = [
+        {
+            "advisor": "main",
+            "security": "CNY-6.26",
+            "longlever": 9.0,
+            "shortlever": 9.0,
+            "maxlever": 9.0,
+            "weight": 0.6,
+        },
+        {
+            "advisor": "main",
+            "security": "Si-6.26",
+            "longlever": 9.0,
+            "shortlever": 9.0,
+            "maxlever": 6.0,
+            "weight": 0.4,
+        },
+    ]
+    portfolioConfigs = [
+        {
+            "portfolio": Portfolio("paper", "SPBFUT", "test"),
+        },
+    ]
+
+    for signalConfig in signalConfigs:
+        advisor = signalConfig["advisor"]
+        securityName = signalConfig["security"]
+        signalName = f"{advisor}-{securityName}"
+        security = moex.getSecurityInfo(securityName)
+        signal = SignalService(
             marketData,
-            "CNY-3.26",
-            "main",
-            0.006,
+            signalName,
+            AdvisorBuilder(advisor, 0.006).build(),
+            security,
             candleInterval,
-            SizeConfig(9, 9, 9, 0.6),
         )
-    )
-    trader._strategyManager._signals.append(
-        buildSignal(
-            candleStorage,
-            marketData,
-            "Si-3.26",
-            "main",
-            0.006,
-            candleInterval,
-            SizeConfig(9, 9, 6, 0.4),
-        )
-    )
+        signal.applyHistoryCandles(candleStorage.read(securityName))
+        trader._signals.append(signal)
 
-    # portfolios
-    trader._strategyManager._portfolios.append(
-        PortfolioService(trader._broker, Portfolio("paper", "", "test"), None, None)
-    )
-
-    # strategies
-    trader._strategyManager.addStrategiesForAllSignalPortfolioPairs()
-
-
-def buildSignal(
-    candleStorage,
-    marketData,
-    security: str,
-    name: str,
-    stdVol: float,
-    candleInterval: str,
-    sizeConfig,
-):
-    sec = moex.getSecurityInfo(security)
-    ind = AdvisorBuilder(name, stdVol).build()
-    signalService = SignalService(
-        marketData, name, ind, sec, candleInterval, sizeConfig
-    )
-    if candleStorage is not None:
-        signalService.applyHistoryCandles(candleStorage.read(security))
-    return signalService
+        # Каждый сигнал торгуем в каждом портфеле
+        for portfolioConfig in portfolioConfigs:
+            portfolio = portfolioConfig["portfolio"]
+            sizePolicy = SizePolicy(
+                signalConfig["longlever"],
+                signalConfig["shortlever"],
+                signalConfig["maxlever"],
+                signalConfig["weight"],
+            )
+            startegy = StrategyService(
+                trader._broker, portfolio, security, signalName, sizePolicy
+            )
+            trader._strategies.append(startegy)

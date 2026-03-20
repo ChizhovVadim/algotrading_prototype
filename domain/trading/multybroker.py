@@ -9,10 +9,8 @@ class MultyBroker:
         for broker in self._brokers.values():
             broker.init()
 
-    def checkStatus(self):
-        for broker in self._brokers.values():
-            broker.checkStatus()
-        print(f"Total brokers: {len(self._brokers)}")
+    def items(self):
+        return self._brokers.items()
 
     def get(self, clientKey: str):
         return self._brokers[clientKey]
