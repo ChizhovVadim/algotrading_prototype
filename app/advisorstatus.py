@@ -1,9 +1,10 @@
 import argparse
 
-import settings
-from domain.model.candle import CandleInterval
-from infra.candlestorage import CandleStorage
-from domain.advisorstatus import advisorStatusUsecase
+from app import settings
+from historydata.model import CandleInterval
+from historydata.candlestorage import CandleStorage
+from advisorstatus import advisorStatusUsecase
+from advisor.build import AdvisorBuilder
 
 
 def main():
@@ -18,8 +19,8 @@ def main():
     candleStorage = CandleStorage.FromCandleInterval(
         settings.candleFolder, args.timeframe
     )
-
-    advisorStatusUsecase(candleStorage, args.advisor, args.security, args.count)
+    advisor = AdvisorBuilder(args.advisor, None).build()
+    advisorStatusUsecase(candleStorage, advisor, args.security, args.count)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 ## Тестирование
 Пример тестирования стратегии на квартальных фьючерсах Si c 2009 года. Папка ~/TradingData/minutes5 должна содержать исторические котировки квартальных фьючерсов.
 ```
-python3 -m app.historyreport --security Si --startyear 2009 --finishyear 2026 --finishquarter 0
+python3 -m app.advisorreport --security Si --startyear 2009
 ```
 ## Автоторговля
 Запуск автоторговли:
