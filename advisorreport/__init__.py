@@ -16,7 +16,7 @@ def historyReportUsecase(candleStorage, args):
             ),
         )
 
-    indBuilder = AdvisorBuilder(args.advisor, None).build
+    indBuilder = AdvisorBuilder(args.advisor, args.advisorsettings).build
 
     start = time.time()
     pnls = advisorpnls.multiContractHprs(

@@ -13,6 +13,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--advisor", type=str, default="main")
+    parser.add_argument("--advisorsettings", type=str)
     parser.add_argument("--timeframe", type=str, default=CandleInterval.Minutes5)
     parser.add_argument("--security", type=str, default="Si")
     parser.add_argument("--lever", type=float)

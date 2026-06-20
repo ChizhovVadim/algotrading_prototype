@@ -1,5 +1,4 @@
-from typing import NamedTuple, Protocol
-from collections.abc import Generator
+from typing import NamedTuple
 from enum import StrEnum
 import datetime
 

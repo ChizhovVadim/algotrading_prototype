@@ -2,6 +2,7 @@ import logging
 import datetime
 import os
 import threading
+from contextlib import ExitStack
 
 from . import settings
 from historydata.model import CandleInterval
@@ -22,8 +23,10 @@ def main():
     "Автоторговля торговых советников"
     initLogger()
     logging.info("Application started.")
-    multyBroker = MultyBroker()
-    try:
+
+    with ExitStack() as exitStack:
+        multyBroker = MultyBroker()
+        exitStack.callback(multyBroker.close)
         monitoring = MonitoringService(multyBroker)
         eng = Engine(monitoring)
         configure(multyBroker, eng)
@@ -31,8 +34,6 @@ def main():
         usercmd_thread = threading.Thread(target=readUserCommands, args=[eng.send])
         usercmd_thread.start()
         eng.run()
-    finally:
-        multyBroker.close()
 
 
 def initLogger():
@@ -73,7 +74,7 @@ def configure(multyBroker: MultyBroker, eng: Engine):
     signalConfigs = [
         {
             "advisor": "main",
-            "security": "CNY-6.26",
+            "security": "CNY-9.26",
             "longlever": 9.0,
             "shortlever": 9.0,
             "maxlever": 9.0,
@@ -81,7 +82,7 @@ def configure(multyBroker: MultyBroker, eng: Engine):
         },
         {
             "advisor": "main",
-            "security": "Si-6.26",
+            "security": "Si-9.26",
             "longlever": 9.0,
             "shortlever": 9.0,
             "maxlever": 6.0,
@@ -106,7 +107,11 @@ def configure(multyBroker: MultyBroker, eng: Engine):
             security,
             candleInterval,
         )
-        signal.applyHistoryCandles(candleStorage.read(securityName))
+        try:
+            signal.applyHistoryCandles(candleStorage.read(securityName))
+        except FileNotFoundError:
+            logging.warning("candleStorage.read", securityName)
+
         eng._signals.append(signal)
 
         # Каждый сигнал торгуем в каждом портфеле

@@ -35,6 +35,9 @@ def computeDailyPnls2(candles, ind, slippage: float, skipPnl):
             continue
 
         newPosition = ind.value()
+        if not -1 <= newPosition <= 1:
+            raise ValueError("bad position",
+                             candle.dateTime, candle.closePrice, newPosition)
         if prevCandle is not None:
             # Хотим на длинные выходные сокращать или закрывать позиции. TODO skipPnlRatio?
             if skipPnl is None or not skipPnl(prevCandle.dateTime, candle.dateTime):
@@ -48,7 +51,7 @@ def computeDailyPnls2(candles, ind, slippage: float, skipPnl):
                 if baseCandle is not None:
                     hpr = 1.0 + pnl / baseCandle.closePrice
                     if hpr <= 0:
-                        raise ValueError("hpr <= 0")
+                        raise ValueError("hpr <= 0", candle.dateTime, candle.closePrice, pnl, hpr)
                     res.append(DateSum(baseCandle.dateTime.date(), hpr))
                 baseCandle = candle  # база - открытие основной сессии нового дня
                 pnl = 0
